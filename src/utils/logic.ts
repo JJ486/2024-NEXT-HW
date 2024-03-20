@@ -41,7 +41,47 @@ export const stepBoard = (board: Board): Board => {
      * @note 你可以使用命令 yarn test step 来运行我们编写的单元测试与我们提供的参考实现对拍
      */
     // Step 1 BEGIN
+    for (let i = 0; i < BOARD_LENGTH; ++i) {
+        newBoard.push([]);
 
+        for (let j = 0; j < BOARD_LENGTH; ++j) {
+            let aliveCounter = 0;
+
+            const left = (j - 1 + BOARD_LENGTH) % BOARD_LENGTH;
+            const right = (j + 1) % BOARD_LENGTH;
+            const up = (i - 1 + BOARD_LENGTH) % BOARD_LENGTH;
+            const down = (i + 1) % BOARD_LENGTH;
+            const checkList = [
+                [up, left], [up, j], [up, right],
+                [i, left], [i, right],
+                [down, left], [down, j], [down, right],
+            ];
+
+            checkList.forEach((ord) => {
+                if (board[ord[0]][ord[1]] === 1) {
+                    ++aliveCounter;
+                }
+            });
+
+            const nowState = board[i][j];
+            if (nowState === 0) {
+                if (aliveCounter === 3) {
+                    newBoard[i].push(1);
+                }
+                else {
+                    newBoard[i].push(0);
+                }
+            }
+            else {
+                if (aliveCounter === 2 || aliveCounter === 3) {
+                    newBoard[i].push(1);
+                }
+                else {
+                    newBoard[i].push(0);
+                }
+            }
+        }
+    }
     // Step 1 END
 
     return newBoard;
@@ -53,7 +93,10 @@ export const flipCell = (board: Board, i: number, j: number): Board => {
      * @note 你可以使用命令 yarn test flip 来运行我们编写的单元测试以检验自己的实现
      */
     // Step 3 BEGIN
-
+    const newBoard = board.map(row => row.slice());
+    newBoard[i][j] = newBoard[i][j] ? 0 : 1;
+    return newBoard;
+    // add something.
     // Step 3 END
 
     /**

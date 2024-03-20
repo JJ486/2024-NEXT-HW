@@ -39,7 +39,11 @@ const ListScreen = () => {
 
     const deleteBoard = (id: number) => {
         // Step 4 BEGIN
-
+        request(`/api/boards/${id}`, "DELETE", true)
+            .then(res => {
+                alert(DELETE_SUCCESS);
+                setBoardList(boardList.filter(board => board.id !== id));
+            });
         // Step 4 END
     };
 

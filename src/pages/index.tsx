@@ -35,7 +35,6 @@ const BoardScreen = () => {
             return;
         }
         if (router.query.id === undefined) {
-            // @todo 这里需要考虑是否需要加载缓存
             setId(undefined);
             return;
         }
@@ -80,7 +79,16 @@ const BoardScreen = () => {
 
     const switchAutoPlay = () => {
         // Step 3 BEGIN
+        setAutoPlay(!autoPlay);
 
+        if (autoPlay) {
+            clearInterval(timerRef.current);
+        }
+        else {
+            timerRef.current = setInterval(() => {
+                setBoard(board => stepBoard(board));
+            }, 200);
+        }
         // Step 3 END
     };
 

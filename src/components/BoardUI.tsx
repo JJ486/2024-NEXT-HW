@@ -2,6 +2,10 @@ import { BOARD_LENGTH } from "../constants/constants";
 import { Board } from "../utils/types";
 import Square from "./Square";
 
+import React from "react";
+
+type Element = React.JSX.Element;
+
 interface BoardUIProps {
     board: Board;
     flip: (i: number, j: number) => void;
@@ -12,7 +16,7 @@ const BoardUI = (props: BoardUIProps) => {
      * @todo [Step 2] 请在下述两处代码缺失部分以正确显示一个灰色边框的 50x50 棋盘
      * @note 这里两处将类型声明为 any[] 是为了在填入缺失代码前也不至于触发 ESLint Error
      */
-    const rowList: any[] = [];
+    const rowList: Element[] = [];
 
     for (let i = 0; i < BOARD_LENGTH; ++i) {
         const cellList: any[] = [];
@@ -21,7 +25,7 @@ const BoardUI = (props: BoardUIProps) => {
             cellList.push(
                 <div onClick={() => props.flip(i, j)} key={j}>
                     {/* Step 2 BEGIN */}
-
+                    <Square key={j} color={props.board[i][j] ? "red" : "white"} />
                     {/* Step 2 END */}
                 </div>
             );
@@ -29,7 +33,9 @@ const BoardUI = (props: BoardUIProps) => {
 
         rowList.push(
             // Step 2 BEGIN
-
+            <div key={i} style={{ display: "flex", flexDirection: "row" }}>
+                {cellList}
+            </div>
             // Step 2 END
         );
     }
