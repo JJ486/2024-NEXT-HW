@@ -8,6 +8,7 @@ const nextConfig = {
         return [{
             source: "/api/:path*",
             // Change to your backend URL in production
+            // change 
             destination: "https://capybara-backend-capybara.app.secoder.net/:path*",
         }];
     }
