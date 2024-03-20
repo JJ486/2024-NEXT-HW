@@ -2,6 +2,7 @@ interface SquareProps {
     color: string;
 }
 
+// add
 const Square = (props: SquareProps) => {
     return (
         <div style={{
