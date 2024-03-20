@@ -96,6 +96,7 @@ export const flipCell = (board: Board, i: number, j: number): Board => {
     const newBoard = board.map(row => row.slice());
     newBoard[i][j] = newBoard[i][j] ? 0 : 1;
     return newBoard;
+    // add something.
     // Step 3 END
 
     /**
