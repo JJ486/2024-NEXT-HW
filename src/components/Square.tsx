@@ -15,5 +15,4 @@ const Square = (props: SquareProps) => {
     );
 };
 
-
 export default Square;
