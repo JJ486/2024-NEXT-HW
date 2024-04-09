@@ -8,8 +8,8 @@ const App = ({ Component, pageProps }: AppProps) => {
 
 export default function AppWrapper(props: AppProps) {
   return (
-      <Provider store={store}>
-          <App {...props} />
-      </Provider>
+    <Provider store={store}>
+      <App {...props} />
+    </Provider>
   );
 }
