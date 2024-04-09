@@ -3,6 +3,9 @@ const nextConfig = {
     output: "standalone",
     reactStrictMode: false, /* @note: To prevent duplicated call of useEffect */
     swcMinify: true,
+    images: {
+        domains: ['iris2.gettimely.com'],
+    },
 
     async rewrites() {
         return [{

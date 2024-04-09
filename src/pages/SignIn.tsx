@@ -51,8 +51,8 @@ export default function SignIn() {
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const requestBody = {
-      username: username,
-      password: password,
+      username,
+      password,
     };
     fetch(`/api/chat/login`, {
       method: "POST",
@@ -68,8 +68,8 @@ export default function SignIn() {
           router.push({
             pathname: "/Chatroom"
           });
-        } else 
-        {
+        }
+        else {
           alert(res.info);
         }
       })

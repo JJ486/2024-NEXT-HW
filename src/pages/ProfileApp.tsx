@@ -70,6 +70,16 @@ export default function ProfileApp() {
     Email: `${email}`,
   };
 
+  const [viewportWidth, setViewportWidth] = useState(0);
+  useEffect(() => {
+    const handleResize = () => {
+      setViewportWidth(window.innerWidth);
+    };
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   return (
     <div>
       <ThemeProvider theme={theme}>
@@ -79,14 +89,11 @@ export default function ProfileApp() {
             <Grid item xs={12} md={6}>
               <Image
                 alt="avatar"
-                style={{
-                  width: "100vw",
-                  height: "35vh",
-                  objectFit: "cover",
-                  objectPosition: "50% 50%",
-                  position: "relative"
-                }}
                 src="https://iris2.gettimely.com/images/default-cover-image.jpg"
+                width={viewportWidth}
+                height={viewportWidth * 0.15} // 设置高度为宽度的35%
+                objectFit="cover"
+                objectPosition="50% 50%"
               />
             </Grid>
 
