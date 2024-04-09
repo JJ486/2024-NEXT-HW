@@ -61,7 +61,7 @@ export default function SettingsCard(props: any) {
     }
     const requestBody = {
       old_password: sha256(oldPassword),
-      password: sha256(newPassword),
+      password: newPassword === "" ? "" : sha256(newPassword),
       email: newEmail,
       phone: newPhone,
       nickname: newNickName,
