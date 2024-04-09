@@ -40,7 +40,7 @@ export const request = async (
     if (needAuth) {
         const token = store.getState().auth.token;
         headers.append("Authorization", token);
-        headers.append("Access-Control-Allow-Origin", '*');
+        headers.append("Access-Control-Allow-Origin", "*");
     }
 
     const response = await fetch(url, {

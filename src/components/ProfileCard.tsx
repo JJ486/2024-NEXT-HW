@@ -7,14 +7,14 @@ import PhotoCameraIcon from "@mui/icons-material/PhotoCamera";
 import Badge from "@mui/material/Badge";
 import Button from "@mui/material/Button";
 import { useRouter } from "next/router";
-import Cookies from 'js-cookie';
+import Cookies from "js-cookie";
 import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogContentText from "@mui/material/DialogContentText";
 import DialogTitle from "@mui/material/DialogTitle";
 import CustomInput from "./CustomInput";
-import sha256 from '../utils/sha256';
+import sha256 from "../utils/sha256";
 import md5 from "md5";
 
 const styles = {
@@ -43,7 +43,7 @@ export default function ProfileCard(props: any) {
   };
 
   const handleAvatarChange = () => {
-    alert("You should use Gravatar to change your profile photo.")
+    alert("You should use Gravatar to change your profile photo.");
     window.location.href = "https://gravatar.com/";
   };
 
@@ -67,7 +67,7 @@ export default function ProfileCard(props: any) {
     .then((res) => {
       if (Number(res.code) === 0) {
         alert("Account deleted successfully!")
-        Cookies.remove('jwt_token');
+        Cookies.remove("jwt_token");
         router.push(`/SignIn`);
       }
     })
@@ -75,7 +75,7 @@ export default function ProfileCard(props: any) {
       alert(error.info);
     });
     setOpen(false);
-  }
+  };
 
   const hash = md5(props.email.trim().toLowerCase());
   const gravatarUrl = `https://www.gravatar.com/avatar/${hash}?d=identicon&s=150`;
@@ -135,7 +135,7 @@ export default function ProfileCard(props: any) {
             color="secondary"
             sx={{ width: "99%", p: 1, my: 2 }}
             onClick={() => {
-              Cookies.remove('jwt_token');
+              Cookies.remove("jwt_token");
               router.push(`/SignIn`);
             }}
           >

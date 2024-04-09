@@ -1,9 +1,9 @@
-import { AppProps } from 'next/app';
+import { AppProps } from "next/app";
 import store from "../redux/store";
 import { Provider } from "react-redux";
 
-const App = ({ Component, pageProps }: AppProps) => {  
-  return <Component {...pageProps} />;
+const App = ({ Component: PageComponent, pageProps }: AppProps) => {  
+  return <PageComponent {...pageProps} />;
 };
 
 export default function AppWrapper(props: AppProps) {

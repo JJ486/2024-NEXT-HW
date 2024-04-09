@@ -8,7 +8,7 @@ import Button from "@mui/material/Button";
 import Tabs from "@mui/material/Tabs";
 import Tab from "@mui/material/Tab";
 import CustomInput from "./CustomInput";
-import Cookies from 'js-cookie';
+import Cookies from "js-cookie";
 import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
@@ -16,7 +16,7 @@ import DialogContentText from "@mui/material/DialogContentText";
 import DialogTitle from "@mui/material/DialogTitle";
 import { useRouter } from "next/router";
 import { CHANGE_INFO_SUCCESS} from "../constants/string";
-import sha256 from '../utils/sha256';
+import sha256 from "../utils/sha256";
 
 export default function SettingsCard(props: any) {
   const router = useRouter();
@@ -60,18 +60,19 @@ export default function SettingsCard(props: any) {
       return;
     }
     const requestBody = {
-      "old_password": sha256(oldPassword),
-      "password": sha256(newPassword),
-      "email": newEmail,
-      "phone": newPhone,
-      "nickname": newNickName,
-      "username": newUserName,
+      old_password: sha256(oldPassword),
+      password: sha256(newPassword),
+      email: newEmail,
+      phone: newPhone,
+      nickname: newNickName,
+      username: newUserName,
     };
     const header = new Headers();
-    const jwtToken = Cookies.get('jwt_token');
+    const jwtToken = Cookies.get("jwt_token");
     if (jwtToken) {
-      header.append('authorization', jwtToken);
-    } else {
+      header.append("authorization", jwtToken);
+    } else
+    {
       router.push(`/SignIn`);
     }
     fetch(`/api/chat/change_userinfo`, {
@@ -84,7 +85,7 @@ export default function SettingsCard(props: any) {
       if (Number(res.code) === 0) {
         alert(((newUserName !== "" && newUserName !== user.username)? newUserName: user.username) + CHANGE_INFO_SUCCESS);
         if (newUserName !== "" && newUserName !== user.username) {
-          Cookies.remove('jwt_token');
+          Cookies.remove("jwt_token");
           router.push(`/SignIn`);
         }
         setUser({
@@ -93,7 +94,8 @@ export default function SettingsCard(props: any) {
           phone: (newPhone !== "" && newPhone !== user.phone)? newPhone: user.phone,
           email: (newEmail !== "" && newEmail !== user.email)? newEmail: user.email,
         });
-      } else {
+      } else
+      {
         alert(res.info);
       }
     })

@@ -4,12 +4,13 @@ import CssBaseline from "@mui/material/CssBaseline";
 import { createTheme, ThemeProvider } from "@mui/material/styles";
 import ProfileCard from "../components/ProfileCard";
 import SettingsCard from "../components/SettingsCard";
-import Cookies from 'js-cookie';
+import Cookies from "js-cookie";
 import { useRouter } from "next/router";
 import { setName, setToken } from "../redux/auth";
 import { useDispatch } from "react-redux";
 import { useSelector } from "react-redux";
 import { RootState } from "../redux/store";
+import Image from "next/image";
 
 const theme = createTheme();
 
@@ -24,12 +25,13 @@ export default function ProfileApp() {
   const authUserName = useSelector((state: RootState) => state.auth.name);
 
   useEffect(() => {
-    const cookie_jwtToken = Cookies.get('jwt_token');
+    const cookie_jwtToken = Cookies.get("jwt_token");
     if (!cookie_jwtToken) {
       router.push(`/SignIn`);
-    } else {
+    } else 
+    {
       const header = new Headers();
-      header.append('authorization', cookie_jwtToken);
+      header.append("authorization", cookie_jwtToken);
       fetch(`/api/chat/get_userinfo`, {
         method: "GET",
         headers: header,
@@ -45,17 +47,18 @@ export default function ProfileApp() {
           setNickname(res.userinfo.nickname);
           setPhone(res.userinfo.phone);
           setEmail(res.userinfo.email);
-        } else {
+        } else 
+        {
           alert(res.info);
         }
       })
       .catch(() => {
         alert("Please sign in again.");
-        Cookies.remove('jwt_token');
+        Cookies.remove("jwt_token");
         router.push(`/SignIn`);
       });
     }
-  }, []);
+  }, [authUserName, dispatch, router]);
 
   const mainUser = {
     dt1: 32,
@@ -74,7 +77,7 @@ export default function ProfileApp() {
           {/* BACKGROUND */}
           <Grid container direction="column" sx={{ overflowX: "hidden" }}>
             <Grid item xs={12} md={6}>
-              <img
+              <Image
                 alt="avatar"
                 style={{
                   width: "100vw",

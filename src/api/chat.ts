@@ -1,36 +1,36 @@
-import { useEffect } from 'react';
-import axios from 'axios';
-import { getUrl } from './utils';
-import { Conversation, Message } from './types';
+import { useEffect } from "react";
+import axios from "axios";
+import { getUrl } from "./utils";
+import { Conversation, Message } from "./types";
 
-export type AddMessageArgs = {
+interface AddMessageArgs {
   me: string;
   conversation: Conversation;
   content: string;
 };
 
-export type GetMessagesArgs = {
+interface GetMessagesArgs {
   me?: string;
   conversationId?: number;
   cursor?: number;
   limit?: number;
 };
 
-export type AddConversationArgs = {
-  type: 'private_chat' | 'group_chat';
+interface AddConversationArgs {
+  type: "private_chat" | "group_chat";
   members: string[];
 };
 
-export type GetConversationsArgs = {
+interface GetConversationsArgs {
   idList: number[];
 };
 
-export type JoinConversationsArgs = {
+interface JoinConversationsArgs {
   conversationId: number;
   me: string;
 };
 
-export type LeaveConversationsArgs = {
+export interface LeaveConversationsArgs {
   conversationId: number;
   me: string;
 };
@@ -41,7 +41,7 @@ export async function addMessage({
   conversation,
   content,
 }: AddMessageArgs) {
-  const { data } = await axios.post(getUrl('messages'), {
+  const { data } = await axios.post(getUrl("messages"), {
     username: me, // 发送者的用户名
     conversation_id: conversation.id, // 会话ID
     content, // 消息内容
@@ -59,7 +59,7 @@ export async function getMessages({
   const messages: Message[] = [];
   while (true) {
     // 使用循环来处理分页，直到没有下一页
-    const { data } = await axios.get(getUrl('messages'), {
+    const { data } = await axios.get(getUrl("messages"), {
       params: {
         username: me, // 查询消息的用户名
         conversation_id: conversationId, // 查询消息的会话 ID
@@ -76,7 +76,7 @@ export async function getMessages({
 
 // 向服务器添加一个新会话 (私聊/群聊)
 export async function addConversation({ type, members }: AddConversationArgs) {
-  const { data } = await axios.post(getUrl('conversations'), {
+  const { data } = await axios.post(getUrl("conversations"), {
     type,
     members,
   });
@@ -86,8 +86,8 @@ export async function addConversation({ type, members }: AddConversationArgs) {
 // 从服务器查询指定会话信息
 export async function getConversations({ idList }: GetConversationsArgs) {
   const params = new URLSearchParams();
-  idList.forEach((id) => params.append('id', id.toString()));
-  const { data } = await axios.get(getUrl('conversations'), {
+  idList.forEach((id) => params.append("id", id.toString()));
+  const { data } = await axios.get(getUrl("conversations"), {
     params,
   });
   return data.conversations as Conversation[];
@@ -119,24 +119,24 @@ export const useMessageListener = (fn: () => void, me: string) => {
 
     const connect = () => {
       ws = new WebSocket(
-        getUrl(`ws/?username=${me}`).replace('http://', 'ws://') // 将http协议替换为ws协议，用于WebSocket连接
+        getUrl(`ws/?username=${me}`).replace("http://", "ws://") // 将http协议替换为ws协议，用于WebSocket连接
       );
 
       ws.onopen = () => {
-        console.log('WebSocket Connected');
+        console.log("WebSocket Connected");
       };
 
       ws.onmessage = async (event) => {
         if (event.data) {
           const data = JSON.parse(event.data);
-          if (data.type == 'notify') fn(); // 当接收到通知类型的消息时，执行回调函数
+          if (data.type === "notify") fn(); // 当接收到通知类型的消息时，执行回调函数
         }
       };
 
       ws.onclose = () => {
-        console.log('WebSocket Disconnected');
+        console.log("WebSocket Disconnected");
         if (!closed) {
-          console.log('Attempting to reconnect...');
+          console.log("Attempting to reconnect...");
           setTimeout(() => {
             connect(); // 当WebSocket连接关闭时，尝试重新连接
           }, 1000);

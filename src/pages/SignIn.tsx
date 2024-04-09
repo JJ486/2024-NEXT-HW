@@ -1,43 +1,41 @@
-import * as React from 'react';
-import Avatar from '@mui/material/Avatar';
-import Button from '@mui/material/Button';
-import CssBaseline from '@mui/material/CssBaseline';
-import TextField from '@mui/material/TextField';
-import FormControlLabel from '@mui/material/FormControlLabel';
-import Checkbox from '@mui/material/Checkbox';
-import Link from '@mui/material/Link';
-import Grid from '@mui/material/Grid';
-import Box from '@mui/material/Box';
-import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
-import Typography from '@mui/material/Typography';
-import Container from '@mui/material/Container';
-import { createTheme, ThemeProvider } from '@mui/material/styles';
+import * as React from "react";
+import Avatar from "@mui/material/Avatar";
+import Button from "@mui/material/Button";
+import CssBaseline from "@mui/material/CssBaseline";
+import TextField from "@mui/material/TextField";
+import Link from "@mui/material/Link";
+import Grid from "@mui/material/Grid";
+import Box from "@mui/material/Box";
+import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
+import Typography from "@mui/material/Typography";
+import Container from "@mui/material/Container";
+import { createTheme, ThemeProvider } from "@mui/material/styles";
 import { useState, useEffect } from "react";
 import { SUGNUP_SUCCESS} from "../constants/string";
 import { useRouter } from "next/router";
-import { createHash } from 'crypto';
-import Cookies from 'js-cookie';
+import { createHash } from "crypto";
+import Cookies from "js-cookie";
 import { setName, setToken } from "../redux/auth";
 import { useDispatch } from "react-redux";
 
 function Copyright(props: any) {
   return (
     <Typography variant="body2" color="text.secondary" align="center" {...props}>
-      {'Copyright © '}
+      {"Copyright © "}
       <Link color="inherit" href="https://mui.com/">
         Capybara
-      </Link>{' '}
+      </Link>{" "}
       {new Date().getFullYear()}
-      {'.'}
+      {""."}
     </Typography>
   );
 }
 
 function sha256(input: string): string {
-  const hash = createHash('sha256');
+  const hash = createHash("sha256");
   input = "capybara" + input;
   hash.update(input);
-  return hash.digest('hex');
+  return hash.digest("hex");
 }
 
 // TODO remove, this demo shouldn't need to reset the theme.
@@ -53,8 +51,8 @@ export default function SignIn() {
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const requestBody = {
-      "username": username,
-      "password": password,
+      username: username,
+      password: password,
     };
     fetch(`/api/chat/login`, {
       method: "POST",
@@ -64,13 +62,14 @@ export default function SignIn() {
       .then((res) => {
         if (Number(res.code) === 0) {
           alert(username + SUGNUP_SUCCESS);
-          Cookies.set('jwt_token', res.token, { expires: 1 / 3 });
+          Cookies.set("jwt_token", res.token, { expires: 1 / 3 });
           dispatch(setToken(res.token));
           dispatch(setName(username));
           router.push({
-            pathname: '/Chatroom'
+            pathname: "/Chatroom"
           });
-        } else {
+        } else 
+        {
           alert(res.info);
         }
       })
@@ -80,13 +79,13 @@ export default function SignIn() {
   };
 
   useEffect(() => {
-    const cookie_jwtToken = Cookies.get('jwt_token');
+    const cookie_jwtToken = Cookies.get("jwt_token");
     if (cookie_jwtToken) {
       router.push({
-        pathname: '/Chatroom'
+        pathname: "/Chatroom"
       });
     }
-  }, []);
+  }, [router]);
 
   return (
     <ThemeProvider theme={defaultTheme}>
@@ -95,12 +94,12 @@ export default function SignIn() {
         <Box
           sx={{
             marginTop: 8,
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
           }}
         >
-          <Avatar sx={{ m: 1, bgcolor: 'secondary.main' }}>
+          <Avatar sx={{ m: 1, bgcolor: "secondary.main" }}>
             <LockOutlinedIcon />
           </Avatar>
           <Typography component="h1" variant="h5">
