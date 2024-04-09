@@ -26,7 +26,7 @@ function Copyright(props: any) {
         Capybara
       </Link>{" "}
       {new Date().getFullYear()}
-      {""."}
+      {"."}
     </Typography>
   );
 }

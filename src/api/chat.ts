@@ -7,33 +7,33 @@ interface AddMessageArgs {
   me: string;
   conversation: Conversation;
   content: string;
-};
+}
 
 interface GetMessagesArgs {
   me?: string;
   conversationId?: number;
   cursor?: number;
   limit?: number;
-};
+}
 
 interface AddConversationArgs {
   type: "private_chat" | "group_chat";
   members: string[];
-};
+}
 
 interface GetConversationsArgs {
   idList: number[];
-};
+}
 
 interface JoinConversationsArgs {
   conversationId: number;
   me: string;
-};
+}
 
 export interface LeaveConversationsArgs {
   conversationId: number;
   me: string;
-};
+}
 
 // 向服务器添加一条消息
 export async function addMessage({

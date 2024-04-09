@@ -58,8 +58,8 @@ const Chatroom = () => {
     const cookie_jwtToken = Cookies.get("jwt_token");
     if (!cookie_jwtToken) {
       router.push(`/SignIn`);
-    } else 
-    {
+    }
+    else {
       if (authUserName === undefined || authUserName === "") {
         const header = new Headers();
         header.append("authorization", cookie_jwtToken);
@@ -72,8 +72,8 @@ const Chatroom = () => {
           if (Number(res.code) === 0) {
             dispatch(setToken(cookie_jwtToken));
             dispatch(setName(res.userinfo.username));
-          } else 
-          {
+          }
+          else {
             alert(res.info);
           }
         })

@@ -49,13 +49,14 @@ export default function ProfileCard(props: any) {
 
   const handleSubmit = () => {
     const requestBody = {
-      "password": sha256(password),
+      password: sha256(password),
     };
     const header = new Headers();
-    const jwtToken = Cookies.get('jwt_token');
+    const jwtToken = Cookies.get("jwt_token");
     if (jwtToken) {
-      header.append('authorization', jwtToken);
-    } else {
+      header.append("authorization", jwtToken);
+    }
+    else {
       router.push(`/SignIn`);
     }
     fetch(`/api/chat/delete_account`, {
@@ -66,7 +67,7 @@ export default function ProfileCard(props: any) {
     .then((res) => res.json())
     .then((res) => {
       if (Number(res.code) === 0) {
-        alert("Account deleted successfully!")
+        alert("Account deleted successfully!");
         Cookies.remove("jwt_token");
         router.push(`/SignIn`);
       }

@@ -28,8 +28,8 @@ export default function ProfileApp() {
     const cookie_jwtToken = Cookies.get("jwt_token");
     if (!cookie_jwtToken) {
       router.push(`/SignIn`);
-    } else 
-    {
+    }
+    else {
       const header = new Headers();
       header.append("authorization", cookie_jwtToken);
       fetch(`/api/chat/get_userinfo`, {
@@ -47,8 +47,8 @@ export default function ProfileApp() {
           setNickname(res.userinfo.nickname);
           setPhone(res.userinfo.phone);
           setEmail(res.userinfo.email);
-        } else 
-        {
+        }
+        else {
           alert(res.info);
         }
       })

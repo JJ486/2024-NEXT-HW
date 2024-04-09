@@ -43,10 +43,10 @@ export default function SignUpScreen() {
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const requestBody = {
-      username: username,
-      password: password,
-      phone: phone,
-      email: email
+      username,
+      password,
+      phone,
+      email
     };
     fetch(`/api/chat/register`, {
       method: "POST",
@@ -59,8 +59,8 @@ export default function SignUpScreen() {
         if (Number(res.code) === 0) {
           alert(username + SUGNUP_SUCCESS);
           router.push("/SignIn");
-        } else 
-        {
+        }
+        else {
           alert(res.info);
         }
       })

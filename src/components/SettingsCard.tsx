@@ -71,8 +71,8 @@ export default function SettingsCard(props: any) {
     const jwtToken = Cookies.get("jwt_token");
     if (jwtToken) {
       header.append("authorization", jwtToken);
-    } else
-    {
+    }
+    else {
       router.push(`/SignIn`);
     }
     fetch(`/api/chat/change_userinfo`, {
@@ -94,8 +94,8 @@ export default function SettingsCard(props: any) {
           phone: (newPhone !== "" && newPhone !== user.phone)? newPhone: user.phone,
           email: (newEmail !== "" && newEmail !== user.email)? newEmail: user.email,
         });
-      } else
-      {
+      }
+      else {
         alert(res.info);
       }
     })
