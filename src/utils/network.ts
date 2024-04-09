@@ -40,12 +40,14 @@ export const request = async (
     if (needAuth) {
         const token = store.getState().auth.token;
         headers.append("Authorization", token);
+        headers.append("Access-Control-Allow-Origin", '*');
     }
 
     const response = await fetch(url, {
         method,
         body: body && JSON.stringify(body),
         headers,
+        mode: "no-cors",
     });
 
     const data = await response.json();

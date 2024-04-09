@@ -1,13 +1,12 @@
 import { configureStore } from "@reduxjs/toolkit";
-
+import thunk from 'redux-thunk';
 import authReducer from "./auth";
-import boardReducer from "./board";
 
 const store = configureStore({
     reducer: {
         auth: authReducer,
-        board: boardReducer,
     },
+    middleware: [thunk],
 });
 
 export type RootState = ReturnType<typeof store.getState>;
