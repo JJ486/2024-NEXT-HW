@@ -20,6 +20,7 @@ export default function CustomInput(props: any) {
         type={props.type}
         InputProps={props.InputProps}
         select={props.select}
+        autoComplete="off"
       >
         {props.content}
       </TextField>

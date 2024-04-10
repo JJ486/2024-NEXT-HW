@@ -24,6 +24,10 @@ export default function ProfileApp() {
   const dispatch = useDispatch();
   const authUserName = useSelector((state: RootState) => state.auth.name);
 
+  const handleNicknameChange = (newNickname: string) => {
+    setNickname(newNickname);
+  };
+
   useEffect(() => {
     const cookie_jwtToken = Cookies.get("jwt_token");
     if (!cookie_jwtToken) {
@@ -125,6 +129,7 @@ export default function ProfileApp() {
                   nickname={mainUser.nickName}
                   phone={mainUser.Phone}
                   email={mainUser.Email}
+                  onNicknameChange={handleNicknameChange}
                 ></SettingsCard>
               </Grid>
             </Grid>

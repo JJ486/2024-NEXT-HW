@@ -40,6 +40,7 @@ export default function SettingsCard(props: any) {
   const [open, setOpen] = useState(false);
   const [oldPassword, setOldPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
+  const [newPasswordAgain, setNewPasswordAgain] = useState("");
   const [newUserName, setNewUserName] = useState("");
   const [newNickName, setNewNickName] = useState("");
   const [newPhone, setNewPhone] = useState("");
@@ -50,13 +51,30 @@ export default function SettingsCard(props: any) {
   };
 
   const handleClose = () => {
+    setOldPassword("");
+    setNewPassword("");
+    setNewPasswordAgain("");
+    setNewUserName("");
+    setNewNickName("");
+    setNewPhone("");
+    setNewEmail("");
+    setOpen(false);
     setOpen(false);
   };
 
+  const handleNicknameChange = (newNickName: string) => {
+    props.onNicknameChange(newNickName);
+  };
 
   const handleSubmit = () => {
     if (oldPassword === "") {
       alert("Please enter your old password.");
+      return;
+    }
+    if (newPassword !== newPasswordAgain) {
+      alert("New passwords do not match.");
+      setNewPassword("");
+      setNewPasswordAgain("");
       return;
     }
     const requestBody = {
@@ -94,6 +112,7 @@ export default function SettingsCard(props: any) {
           phone: (newPhone !== "" && newPhone !== user.phone)? newPhone: user.phone,
           email: (newEmail !== "" && newEmail !== user.email)? newEmail: user.email,
         });
+        handleNicknameChange(newNickName);
       }
       else {
         alert(res.info);
@@ -102,7 +121,18 @@ export default function SettingsCard(props: any) {
     .catch((error) => {
       alert(error.info);
     });
+    setOldPassword("");
+    setNewPassword("");
+    setNewPasswordAgain("");
+    setNewUserName("");
+    setNewNickName("");
+    setNewPhone("");
+    setNewEmail("");
     setOpen(false);
+  };
+
+  const handleClickBack = () => {
+    router.push(`/Chatroom`);
   };
 
   return (
@@ -134,43 +164,47 @@ export default function SettingsCard(props: any) {
               columnSpacing={5}
               rowSpacing={3}
             >
-              {/* ROW 1: FIRST NAME */}
+              {/* FIRST NAME */}
               <Grid component="form" item xs={6}>
                 <CustomInput
                   id="userName"
                   name="userName"
                   value={props.username}
                   title="User Name"
+                  InputProps={{ readOnly: true }}
                 ></CustomInput>
               </Grid>
 
-              {/* ROW 1: FIRST NAME */}
+              {/* FIRST NAME */}
               <Grid component="form" item xs={6}>
                 <CustomInput
                   id="nickName"
                   name="nickName"
                   value={user.nickname}
                   title="Nick Name"
+                  InputProps={{ readOnly: true }}
                 ></CustomInput>
               </Grid>
 
-              {/* ROW 3: PHONE */}
+              {/* PHONE */}
               <Grid item xs={6}>
                 <CustomInput
                   id="phone"
                   name="phone"
                   value={user.phone}
                   title="Phone Number"
+                  InputProps={{ readOnly: true }}
                 ></CustomInput>
               </Grid>
 
-              {/* ROW 3: EMAIL */}
+              {/* EMAIL */}
               <Grid item xs={6}>
                 <CustomInput
                   id="email"
                   name="email"
                   value={user.email}
                   title="Email Address"
+                  InputProps={{ readOnly: true }}
                 ></CustomInput>
               </Grid>
 
@@ -179,11 +213,11 @@ export default function SettingsCard(props: any) {
                 container
                 justifyContent={{ xs: "center", md: "flex-end" }}
                 item
-                xs={6}
+                xs={10}
                 sx={{ marginLeft: "auto", marginRight: "15px" }}
               >
                 <Button
-                  sx={{ p: "1rem 2rem", my: 2, height: "3rem" }}
+                  sx={{ width: "100px", height: "45px", my: 2 }}
                   component="button"
                   size="large"
                   variant="contained"
@@ -205,6 +239,7 @@ export default function SettingsCard(props: any) {
                       value={oldPassword}
                       req={true}
                       onChange={(e: React.ChangeEvent<HTMLInputElement>) => setOldPassword(e.target.value)}
+                      type="password"
                       title="Old Password"
                       autoFocus
                     ></CustomInput>
@@ -213,7 +248,17 @@ export default function SettingsCard(props: any) {
                       name="newPassword"
                       value={newPassword}
                       onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewPassword(e.target.value)}
+                      type="password"
                       title="New Password"
+                      autoFocus
+                    ></CustomInput>
+                    <CustomInput
+                      id="newPasswordAgain"
+                      name="newPasswordAgain"
+                      value={newPasswordAgain}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewPasswordAgain(e.target.value)}
+                      type="password"
+                      title="New Password Again"
                       autoFocus
                     ></CustomInput>
                     <CustomInput
@@ -256,6 +301,24 @@ export default function SettingsCard(props: any) {
                     </Button>
                   </DialogActions>
                 </Dialog>
+              </Grid>
+              <Grid
+                container
+                justifyContent={{ xs: "center", md: "flex-end" }}
+                item
+                xs={1}
+                sx={{ marginLeft: "auto", marginRight: "15px" }}
+              >
+                <Button
+                  sx={{ width: "100px", height: "45px", my: 2 }}
+                  component="button"
+                  size="large"
+                  variant="contained"
+                  color="secondary"
+                  onClick={handleClickBack}
+                >
+                  Back
+                </Button>
               </Grid>
             </Grid>
           </FormControl>

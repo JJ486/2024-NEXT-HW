@@ -95,18 +95,6 @@ export default function ProfileCard(props: any) {
           <Badge
             overlap="circular"
             anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
-            badgeContent={
-              <PhotoCameraIcon
-                sx={{
-                  border: "5px solid white",
-                  backgroundColor: "#ff558f",
-                  borderRadius: "50%",
-                  padding: ".2rem",
-                  width: 35,
-                  height: 35
-                }}
-              ></PhotoCameraIcon>
-            }
           >
             <Avatar
               sx={{ width: 100, height: 100, mb: 1.5 }}
