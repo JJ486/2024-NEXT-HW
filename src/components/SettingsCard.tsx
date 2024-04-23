@@ -9,14 +9,10 @@ import Tabs from "@mui/material/Tabs";
 import Tab from "@mui/material/Tab";
 import CustomInput from "./CustomInput";
 import Cookies from "js-cookie";
-import Dialog from "@mui/material/Dialog";
-import DialogActions from "@mui/material/DialogActions";
-import DialogContent from "@mui/material/DialogContent";
-import DialogContentText from "@mui/material/DialogContentText";
-import DialogTitle from "@mui/material/DialogTitle";
 import { useRouter } from "next/router";
 import { CHANGE_INFO_SUCCESS} from "../constants/string";
 import sha256 from "../utils/sha256";
+import EditDialog from "./EditDialog";
 
 export default function SettingsCard(props: any) {
   const router = useRouter();
@@ -58,7 +54,6 @@ export default function SettingsCard(props: any) {
     setNewNickName("");
     setNewPhone("");
     setNewEmail("");
-    setOpen(false);
     setOpen(false);
   };
 
@@ -226,81 +221,25 @@ export default function SettingsCard(props: any) {
                 >
                   Edit
                 </Button>
-                <Dialog open={open} onClose={handleClose}>
-                  <DialogTitle>Edit Information</DialogTitle>
-                  <DialogContent>
-                    <DialogContentText>
-                      Please enter new information:<br />
-                      You must enter your old password for Identity Verification.
-                    </DialogContentText>
-                    <CustomInput
-                      id="oldPassword"
-                      name="oldPassword"
-                      value={oldPassword}
-                      req={true}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setOldPassword(e.target.value)}
-                      type="password"
-                      title="Old Password"
-                      autoFocus
-                    ></CustomInput>
-                    <CustomInput
-                      id="newPassword"
-                      name="newPassword"
-                      value={newPassword}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewPassword(e.target.value)}
-                      type="password"
-                      title="New Password"
-                      autoFocus
-                    ></CustomInput>
-                    <CustomInput
-                      id="newPasswordAgain"
-                      name="newPasswordAgain"
-                      value={newPasswordAgain}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewPasswordAgain(e.target.value)}
-                      type="password"
-                      title="New Password Again"
-                      autoFocus
-                    ></CustomInput>
-                    <CustomInput
-                      id="newUserName"
-                      name="newUserName"
-                      value={newUserName}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewUserName(e.target.value)}
-                      title="New User Name"
-                      autoFocus
-                    ></CustomInput>
-                    <CustomInput
-                      id="newNickName"
-                      name="newNickName"
-                      value={newNickName}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewNickName(e.target.value)}
-                      title="New Nick Name"
-                      autoFocus
-                    ></CustomInput>
-                    <CustomInput
-                      id="newPhone"
-                      name="newPhone"
-                      value={newPhone}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewPhone(e.target.value)}
-                      title="New Phone"
-                      autoFocus
-                    ></CustomInput>
-                    <CustomInput
-                      id="newEmail"
-                      name="newEmail"
-                      value={newEmail}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewEmail(e.target.value)}
-                      title="New Email"
-                      autoFocus
-                    ></CustomInput>
-                  </DialogContent>
-                  <DialogActions>
-                    <Button onClick={handleClose}>Cancel</Button>
-                    <Button onClick={handleSubmit} color="primary">
-                      Submit
-                    </Button>
-                  </DialogActions>
-                </Dialog>
+                <EditDialog
+                  open={open}
+                  oldPassword={oldPassword}
+                  newPassword={newPassword}
+                  newPasswordAgain={newPasswordAgain}
+                  newUserName={newUserName}
+                  newNickName={newNickName}
+                  newPhone={newPhone}
+                  newEmail={newEmail}
+                  setOldPassword={setOldPassword}
+                  setNewPassword={setNewPassword}
+                  setNewPasswordAgain={setNewPasswordAgain}
+                  setNewUserName={setNewUserName}
+                  setNewNickName={setNewNickName}
+                  setNewPhone={setNewPhone}
+                  setNewEmail={setNewEmail}
+                  onhandleClose={handleClose}
+                  onhandleSubmit={handleSubmit}
+                ></EditDialog>
               </Grid>
               <Grid
                 container

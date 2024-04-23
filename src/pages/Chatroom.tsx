@@ -9,6 +9,9 @@ import List from "@material-ui/core/List";
 import ListItem from "@material-ui/core/ListItem";
 import ListItemIcon from "@material-ui/core/ListItemIcon";
 import ListItemText from "@material-ui/core/ListItemText";
+import ListItemSecondaryAction from "@material-ui/core/ListItemSecondaryAction";
+import IconButton from "@material-ui/core/IconButton";
+import AddIcon from "@mui/icons-material/Add";
 import Avatar from "@material-ui/core/Avatar";
 import Fab from "@material-ui/core/Fab";
 import SendIcon from "@mui/icons-material/Send";
@@ -121,6 +124,11 @@ const Chatroom = () => {
                 <PeopleIcon />
               </ListItemIcon>
               <ListItemText primary="Friends"></ListItemText>
+              <ListItemSecondaryAction>
+                <IconButton edge="end" aria-label="add" onClick={toggleShowChats}>
+                  <AddIcon />
+                </IconButton>
+              </ListItemSecondaryAction>
             </ListItem>
           </List>
           <Divider />
@@ -156,6 +164,7 @@ const Chatroom = () => {
         <Grid item xs={9}>
           <List className={classes.messageArea}>
             {/* Display messages based on selected chat/friend */}
+            
           </List>
           <Divider />
           <Grid container style={{padding: "20px"}}>

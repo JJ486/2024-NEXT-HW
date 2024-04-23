@@ -11,7 +11,7 @@ import Typography from "@mui/material/Typography";
 import Container from "@mui/material/Container";
 import { createTheme, ThemeProvider } from "@mui/material/styles";
 import { useState, useEffect } from "react";
-import { SUGNUP_SUCCESS} from "../constants/string";
+import { SUGNIN_SUCCESS} from "../constants/string";
 import { useRouter } from "next/router";
 import { createHash } from "crypto";
 import Cookies from "js-cookie";
@@ -61,7 +61,7 @@ export default function SignIn() {
       .then((res) => res.json())
       .then((res) => {
         if (Number(res.code) === 0) {
-          alert(username + SUGNUP_SUCCESS);
+          alert(username + SUGNIN_SUCCESS);
           Cookies.set("jwt_token", res.token, { expires: 1 / 3 });
           dispatch(setToken(res.token));
           dispatch(setName(username));
