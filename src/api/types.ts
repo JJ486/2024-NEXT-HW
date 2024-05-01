@@ -12,3 +12,18 @@ export interface Conversation {
   members: string[]; // 会话成员列表
   unreadCount?: number; // 未读计数
 }
+
+export interface Friend {
+  username: string;
+  email: string;
+  tag: string;
+}
+
+export interface FriendRequest {
+  username: string;
+  nickname: string;
+  email: string;
+  status: "Pending" | "Accept" | "Reject";
+  role: "receiver" | "sender";
+  timestamp: string;
+}

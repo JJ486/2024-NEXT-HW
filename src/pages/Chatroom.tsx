@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback, use } from "react";
 import { makeStyles } from "@material-ui/core/styles";
 import Paper from "@material-ui/core/Paper";
 import Grid from "@material-ui/core/Grid";
@@ -10,20 +10,33 @@ import ListItem from "@material-ui/core/ListItem";
 import ListItemIcon from "@material-ui/core/ListItemIcon";
 import ListItemText from "@material-ui/core/ListItemText";
 import ListItemSecondaryAction from "@material-ui/core/ListItemSecondaryAction";
+import Badge from "@material-ui/core/Badge";
 import IconButton from "@material-ui/core/IconButton";
 import AddIcon from "@mui/icons-material/Add";
+import MailIcon from "@mui/icons-material/Mail";
 import Avatar from "@material-ui/core/Avatar";
 import Fab from "@material-ui/core/Fab";
 import SendIcon from "@mui/icons-material/Send";
 import ChatIcon from "@mui/icons-material/Chat";
 import PeopleIcon from "@mui/icons-material/People";
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
+import LocalOfferIcon from "@mui/icons-material/LocalOffer";
 import Cookies from "js-cookie";
 import { useSelector } from "react-redux";
 import { RootState } from "../redux/store";
 import { useRouter } from "next/router";
 import { setName, setToken } from "../redux/auth";
 import { useDispatch } from "react-redux";
+import AddFriendDialog from "../components/AddFriendDialog";
+import { Friend, FriendRequest } from "../api/types";
+import FriendList from "../components/FriendList";
+import { friendsDB, updateUnreadFriendRequestsCounts } from "../api/db";
+import { useFriendListener } from "../api/websocket";
+import FriendRequestDialog from "../components/FriendRequestDialog";
+const { useRequest } = require("ahooks");
+import { addFriend, deleteFriend, addFriendTag, getTagFriends } from "../api/friend";
+import CustomInput from "../components/CustomInput";
+import SelectFriendTagDialog from "../components/SelectTagDialog";
 
 const useStyles = makeStyles({
   table: {
@@ -48,13 +61,135 @@ const useStyles = makeStyles({
 const Chatroom = () => {
   const classes = useStyles();
   const [showChats, setShowChats] = useState(true);
+  const [addFriendOpen, setAddFriendOpen] = useState(false);
+  const [friendUsername, setFriendUsername] = useState("");
+  const [friendNichname, setFriendNichname] = useState("");
+  const [friendPhone, setFriendPhone] = useState("");
+  const [friendEmail, setFriendEmail] = useState("");
+  const [showInfo, setShowInfo] = useState(false);
+  const [friendsList, setFriendsList] = useState<Friend[]>([]);
+  const [friendRequestList, setFriendRequestList] = useState<FriendRequest[]>([]);
+  const [unreadFriendRequestsCount, setUnreadFriendRequestsCount] = useState(0);
+  const [friendRequestOpen, setFriendRequestOpen] = useState(false);
+  const [friendChange, setFriendChange] = useState(false);
+  const [friendRequestChange, setFriendRequestChange] = useState(false);
+  const [addTagOpen, setAddTagOpen] = useState(false);
+  const [friendTag, setFriendTag] = useState("");
+  const [tagFriend, setTagFriend] = useState("");
+  const [showSelectTag, setShowSelectTag] = useState(false);
+  const [tags, setTags] = useState<string[]>([]);
+  const [useTag, setUseTag] = useState(false);
+  const [tagFriendList, setTagFriendList] = useState<Friend[]>([]);
 
   const router = useRouter();
   const dispatch = useDispatch();
   const authUserName = useSelector((state: RootState) => state.auth.name);
 
-  const toggleShowChats = () => {
-    setShowChats(!showChats);
+  const handleClickAddFriendOpen = () => {
+    setAddFriendOpen(true);
+  };
+
+  const handleSelechTagOpen = () => {
+    setShowSelectTag(true);
+  };
+
+  const handleClickFriendRequestOpen = async () => {
+    setFriendRequestOpen(true);
+    await friendsDB.pullFriendRequests();
+    try {
+      await friendsDB.friendRequests.toArray();
+      setFriendRequestChange(!friendRequestChange);
+    }
+    catch (error: any) {
+      console.error(error);
+    }
+  };
+
+  const handleAddFriendClose = () => {
+    setAddFriendOpen(false);
+    setFriendUsername("");
+    setFriendNichname("");
+    setFriendPhone("");
+    setFriendEmail("");
+    setShowInfo(false);
+  };
+
+  const handleFriendRequestClose = () => {
+    setFriendRequestOpen(false);
+    setFriendRequestChange(!friendRequestChange);
+  };
+
+  const handleFindFriend = () => {
+    const header = new Headers();
+    const jwtToken = Cookies.get("jwt_token");
+    if (jwtToken) {
+      header.append("authorization", jwtToken);
+    }
+    else {
+      router.push(`/SignIn`);
+    }
+    if (friendUsername === "") {
+      alert("Please enter a username.");
+      return;
+    }
+    fetch(`/api/chat/find_user/${friendUsername}`, {
+      method: "GET",
+      headers: header,
+    })
+    .then((res) => res.json())
+    .then((res) => {
+      if (Number(res.code) === 0) {
+        setFriendNichname(res.userinfo.nickname);
+        setFriendPhone(res.userinfo.phone);
+        setFriendEmail(res.userinfo.email);
+        setShowInfo(true);
+      }
+      else {
+        alert(res.info);
+      }
+    })
+    .catch((error) => {
+      alert(error.info);
+    });
+  };
+
+  const handleSelechTagClose = () => {
+    setShowSelectTag(false);
+  };
+
+  const handleSubmitFriendRequest = () => {
+    if (friendUsername === "") {
+      alert("Please enter a username.");
+      return;
+    }
+    addFriend(friendUsername)
+    .then((res) => res.json())
+    .then((res) => {
+      if (Number(res.code) === 0) {
+        alert(`Friend request sent to ${friendUsername}.`);
+        setAddFriendOpen(false);
+        setFriendUsername("");
+        setFriendNichname("");
+        setFriendPhone("");
+        setFriendEmail("");
+        setShowInfo(false);
+      }
+      else {
+        alert(res.info);
+      }
+    })
+    .catch((error) => {
+      alert(error.message);
+    });
+  };
+
+  const ShowChats = () => {
+    setShowChats(true);
+  };
+
+  const ShowFriends = () => {
+    setShowChats(false);
+    setUseTag(false);
   };
 
   useEffect(() => {
@@ -89,13 +224,135 @@ const Chatroom = () => {
     }
   }, [authUserName, dispatch, router]);
 
+  const { data: friendRequests, refresh } = useRequest(async () => {
+    const friendRequests = await friendsDB.friendRequests.toArray();
+    return friendRequests;
+  });
+
+  const updateFriendRequest = useCallback(() => {
+    friendsDB.pullFriendRequests()
+      .then((count) => {
+        console.log("count:", count);
+        setUnreadFriendRequestsCount(count);
+        setFriendChange(!friendChange);
+        refresh();
+      });
+  }, [refresh]);
+
+  useEffect(() => {
+    updateFriendRequest();
+  }, [updateFriendRequest]);
+
+  useFriendListener(updateFriendRequest);
+
   const handleClick = () => {
-    console.log("Stored username:", authUserName);
     router.push({
       pathname: "/Profile"
-      // query: { username: cookie_username }
     });
   };
+
+  const handleDeleteFriend = (username: string) => {
+    deleteFriend(username)
+    .then((res) => res.json())
+    .then((res) => {
+      if (Number(res.code) === 0) {
+        alert("You have deleted the friend.");
+        setFriendChange(!friendChange);
+      }
+      else {
+        alert(res.info);
+      }
+    })
+    .catch((error) => {
+      alert(error.info);
+    });
+  };
+
+  const handleClickAddFriendTagOpen = (username: string) => {
+    setAddTagOpen(true);
+    setTagFriend(username);
+  };
+
+  const handleClickAddFriendTagClose = () => {
+    setTagFriend("");
+    setFriendTag("");
+    setAddTagOpen(false);
+  };
+
+  const handleAddFriendTag = () => {
+    if (tagFriend === "") {
+      alert("Please enter a tag.");
+      return;
+    }
+    addFriendTag(tagFriend, friendTag)
+    .then((res) => res.json())
+    .then((res) => {
+      if (Number(res.code) === 0) {
+        alert(`You have Added tag "${friendTag}" to the friend.`);
+        setTagFriend("");
+        setFriendTag("");
+        setFriendChange(!friendChange);
+        setAddTagOpen(false);
+      }
+      else {
+        alert(res.info);
+      }
+    })
+    .catch((error) => {
+      alert(error.message);
+    });
+  };
+
+  const handleGetTagFriends = (tag: string) => {
+    getTagFriends(tag)
+    .then((res) => res.json())
+    .then((res) => {
+      if (Number(res.code) === 0) {
+        setTagFriendList(res.friends);
+        setUseTag(true);
+        setShowSelectTag(false);
+      }
+      else {
+        alert(res.info);
+      }
+    })
+    .catch((error) => {
+      alert(error.message);
+    });
+  };
+
+  useEffect(() => {
+    friendsDB.pullFriends();
+  }, [friendChange]);
+
+  useEffect(() => {
+    setTimeout(() => {
+      friendsDB.friends.toArray().then((friends) => {
+        setFriendsList(friends);
+        const friendTags: string[] = [];
+        friends.forEach((friend) => {
+          if (friend.tag !== "" && !friendTags.includes(friend.tag)) {
+            friendTags.push(friend.tag);
+          }
+        });
+        setTags(friendTags);
+      });
+    }, 100);
+  }, [friendChange]);
+
+  useEffect(() => {
+    friendsDB.pullFriendRequests();
+  }, [friendRequestChange]);
+
+  useEffect(() => {
+    setTimeout(() => {
+      friendsDB.friendRequests.toArray().then((friendRequests) => {
+        setFriendRequestList(friendRequests);
+        const count = updateUnreadFriendRequestsCounts(friendRequests);
+        setUnreadFriendRequestsCount(count);
+      });
+    }, 300);
+  }, [friendRequestChange]);
 
   return (
     <div>
@@ -109,25 +366,63 @@ const Chatroom = () => {
           <List>
             <ListItem button onClick={handleClick}>
               <ListItemIcon>
-              <AccountCircleIcon />
+                <AccountCircleIcon />
               </ListItemIcon>
               <ListItemText primary={authUserName}></ListItemText>
             </ListItem>
-            <ListItem button onClick={toggleShowChats}>
+            <ListItem button onClick={ShowChats}>
               <ListItemIcon>
                 <ChatIcon />
               </ListItemIcon>
               <ListItemText primary="Chats"></ListItemText>
             </ListItem>
-            <ListItem button onClick={toggleShowChats}>
+            <ListItem button onClick={ShowFriends}>
               <ListItemIcon>
                 <PeopleIcon />
               </ListItemIcon>
               <ListItemText primary="Friends"></ListItemText>
               <ListItemSecondaryAction>
-                <IconButton edge="end" aria-label="add" onClick={toggleShowChats}>
+                <IconButton aria-label="Selet Tag" onClick={handleSelechTagOpen}>
+                  <LocalOfferIcon />
+                </IconButton>
+                <SelectFriendTagDialog
+                  open={showSelectTag}
+                  onhandleSelechTagClose={handleSelechTagClose}
+                  tags={tags}
+                  useTag={useTag}
+                  setUseTag={setUseTag}
+                  tagFriendList={tagFriendList}
+                  onhandleSelectTag={handleGetTagFriends}
+                ></SelectFriendTagDialog>
+                <IconButton aria-label="Mail" onClick={handleClickFriendRequestOpen}>
+                  <Badge badgeContent={unreadFriendRequestsCount} color="secondary">
+                    <MailIcon />
+                  </Badge>
+                </IconButton>
+                <FriendRequestDialog
+                  open={friendRequestOpen}
+                  onhandleFriendRequestClose={handleFriendRequestClose}
+                  friendRequests={friendRequestList}
+                  onSetFriendChange={setFriendChange}
+                  friendChange={friendChange}
+                  onSetFriendRequestChange={setFriendRequestChange}
+                  friendRequestChange={friendRequestChange}
+                ></FriendRequestDialog>
+                <IconButton edge="end" aria-label="add" onClick={handleClickAddFriendOpen}>
                   <AddIcon />
                 </IconButton>
+                <AddFriendDialog
+                  open={addFriendOpen}
+                  friendUsername={friendUsername}
+                  setFriendUsername={setFriendUsername}
+                  friendNichname={friendNichname}
+                  friendPhone={friendPhone}
+                  friendEmail={friendEmail}
+                  showInfo={showInfo}
+                  onhandleAddFriendClose={handleAddFriendClose}
+                  onhandleFindFriend={handleFindFriend}
+                  onhandleSubmitFriendRequest={handleSubmitFriendRequest}
+                ></AddFriendDialog>
               </ListItemSecondaryAction>
             </ListItem>
           </List>
@@ -149,33 +444,38 @@ const Chatroom = () => {
                 {/* Add other chat items */}
               </>
             ) : (
-              <>
-                <ListItem button key="Alice">
-                  <ListItemIcon>
-                    <Avatar alt="Alice" src="https://material-ui.com/static/images/avatar/3.jpg" />
-                  </ListItemIcon>
-                  <ListItemText primary="Alice">Alice</ListItemText>
-                </ListItem>
-                {/* Add other friend items */}
-              </>
+              <FriendList
+                friends={useTag ? tagFriendList : friendsList}
+                onDeleteFriend={handleDeleteFriend}
+                addTagOpen={addTagOpen}
+                setAddTagOpen={setAddTagOpen}
+                friendTag={friendTag}
+                setFriendTag={setFriendTag}
+                tagFriend={tagFriend}
+                setTagFriend={setTagFriend}
+                onhandleClickAddFriendTagOpen={handleClickAddFriendTagOpen}
+                onhandleClickAddFriendTagClose={handleClickAddFriendTagClose}
+                onhandleAddFriendTag={handleAddFriendTag}
+              ></FriendList>
             )}
           </List>
         </Grid>
+
         <Grid item xs={9}>
           <List className={classes.messageArea}>
             {/* Display messages based on selected chat/friend */}
-            
           </List>
           <Divider />
           <Grid container style={{padding: "20px"}}>
             <Grid item xs={11}>
-              <TextField id="outlined-basic-email" label="Type Something" fullWidth />
+              <CustomInput />
             </Grid>
             <Grid xs={1} style={{ textAlign: "right" }}>
               <Fab color="primary" aria-label="add"><SendIcon /></Fab>
             </Grid>
           </Grid>
         </Grid>
+
       </Grid>
     </div>
   );
