@@ -37,5 +37,5 @@ export const useFriendListener = (fn: () => void) => {
         ws.close();
       }
     };
-  }, [jwtToken, fn]);
+  }, [fn]);
 };
