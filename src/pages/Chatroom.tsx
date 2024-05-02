@@ -60,7 +60,7 @@ const Chatroom = () => {
   const [useTag, setUseTag] = useState(false);
   const [tagFriendList, setTagFriendList] = useState<Friend[]>([]);
   const [message, setMessage] = useState("");
-  const [messages, setMessages] = useState<Array<{ id: number, text: string, sender: string }>>([]);
+  const [messages, setMessages] = useState<{ id: number, text: string, sender: string }[]>([]);
 
   const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setMessage(event.target.value);
@@ -68,9 +68,9 @@ const Chatroom = () => {
 
   const handleSend = () => {
     if (message.trim()) {
-      const newMessage = { id: messages.length + 1, text: message, sender: 'self' };
-      setMessages([...messages, newMessage]);  // Add new message to messages array
-      setMessage("");  // Clear the message input after sending
+      const newMessage = { id: messages.length + 1, text: message, sender: "self" };
+      setMessages([...messages, newMessage]);
+      setMessage("");
     }
   };
 
@@ -464,16 +464,16 @@ const Chatroom = () => {
             <List>
               {messages.map((message) => (
                 <ListItem key={message.id}>
-                  <Grid container justifyContent={message.sender === 'self' ? 'flex-end' : 'flex-start'}>
+                  <Grid container justifyContent={message.sender === "self" ? "flex-end" : "flex-start"}>
                     <Paper style={{
-                      backgroundColor: message.sender === 'self' ? '#d4edda' : '#f8f9fa',
-                      padding: '10px',
-                      borderRadius: '10px',
-                      maxWidth: '80%'
+                      backgroundColor: message.sender === "self" ? "#d4edda" : "#f8f9fa",
+                      padding: "10px",
+                      borderRadius: "10px",
+                      maxWidth: "80%"
                     }}>
                       <ListItemText
                         primary={message.text}
-                        style={{ textAlign: message.sender === 'self' ? 'right' : 'left', color: message.sender === 'self' ? 'green' : 'black' }}
+                        style={{ textAlign: message.sender === "self" ? "right" : "left", color: message.sender === "self" ? "green" : "black" }}
                       />
                     </Paper>
                   </Grid>
@@ -490,7 +490,7 @@ const Chatroom = () => {
                 value={message}
                 onChange={handleChange}
                 onKeyPress={(event: { key: string; }) => {
-                  if (event.key === 'Enter') {
+                  if (event.key === "Enter") {
                     handleSend();
                   }
                 }}

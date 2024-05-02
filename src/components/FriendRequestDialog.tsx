@@ -31,7 +31,7 @@ export default function FriendRequestDialog(props: any) {
               <ListItemAvatar>
                 <Avatar alt={request.username} src={`https://www.gravatar.com/avatar/${md5(request.email.trim().toLowerCase())}?d=identicon&s=150`} />
               </ListItemAvatar>
-              <Grid style={{ width: '350px' }}>
+              <Grid style={{ width: "350px" }}>
                 <ListItemText
                   primary={request.nickname ? `${request.nickname}` : `${request.username}`}
                   secondary={`${new Date(parseInt(request.timestamp)).toLocaleString()}`}
@@ -49,7 +49,7 @@ export default function FriendRequestDialog(props: any) {
               </Grid>
               {(request.status === "Pending" && request.role === "receiver") ? (
                 <>
-                  <Grid container direction="row" alignItems="center" justifyContent="flex-end" spacing={1} style={{ width: '500px' }}>
+                  <Grid container direction="row" alignItems="center" justifyContent="flex-end" spacing={1} style={{ width: "500px" }}>
                     <Grid item>
                       <Button
                         style={{ textTransform: "none", padding: "5px 10px", borderWidth: "2px" }}
@@ -64,7 +64,8 @@ export default function FriendRequestDialog(props: any) {
                                 props.onSetFriendChange(!props.friendChange);
                                 props.onSetFriendRequestChange(!props.friendRequestChange);
                                 props.onhandleFriendRequestClose();
-                              } else {
+                              }
+                              else {
                                 alert(res.info);
                               }
                             })
@@ -90,7 +91,8 @@ export default function FriendRequestDialog(props: any) {
                                 props.onSetFriendChange(!props.friendChange);
                                 props.onSetFriendRequestChange(!props.friendRequestChange);
                                 props.onhandleFriendRequestClose();
-                              } else {
+                              }
+                              else {
                                 alert(res.info);
                               }
                             })
