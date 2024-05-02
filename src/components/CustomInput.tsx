@@ -8,9 +8,10 @@ export default function CustomInput(props: any) {
         {props.title}
       </label>
       <TextField
+        label={props.label}
         fullWidth
         margin="dense"
-        size="small"
+        size="medium"
         id={props.id}
         name={props.name}
         value={props.value}
@@ -20,7 +21,6 @@ export default function CustomInput(props: any) {
         type={props.type}
         InputProps={props.InputProps}
         select={props.select}
-        autoComplete="off"
       >
         {props.content}
       </TextField>

@@ -13,6 +13,9 @@ import Avatar from "@material-ui/core/Avatar";
 import md5 from "md5";
 import { FriendRequest } from "../api/types";
 import { handleFriendRequest } from "../api/friend";
+import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
+import Grid from "@material-ui/core/Grid";
+import Box from "@mui/material/Box";
 
 export default function FriendRequestDialog(props: any) {
   return (
@@ -28,48 +31,75 @@ export default function FriendRequestDialog(props: any) {
               <ListItemAvatar>
                 <Avatar alt={request.username} src={`https://www.gravatar.com/avatar/${md5(request.email.trim().toLowerCase())}?d=identicon&s=150`} />
               </ListItemAvatar>
-              <ListItemText
-                primary={`${request.nickname} (${request.username})`}
-                secondary={`Email: ${request.email}, Status: ${request.status}, Role: ${request.role}, Timestamp: ${new Date(parseInt(request.timestamp)).toLocaleString()}`}
-              />
+              <Grid style={{ width: '350px' }}>
+                <ListItemText
+                  primary={request.nickname ? `${request.nickname}` : `${request.username}`}
+                  secondary={`${new Date(parseInt(request.timestamp)).toLocaleString()}`}
+                />
+              </Grid>
+              <Grid container direction="row" alignItems="center" justifyContent="flex-end" spacing={1} style={{ marginRight: "3px" }}>
+                {request.role === "sender" && (
+                  <Grid item>
+                    <ArrowForwardIcon />
+                  </Grid>
+                )}
+                <Grid item>
+                  <ListItemText primary={`${request.status}`} />
+                </Grid>
+              </Grid>
               {(request.status === "Pending" && request.role === "receiver") ? (
                 <>
-                  <Button onClick={() => {
-                    handleFriendRequest(request, true)
-                    .then((res) => res.json())
-                    .then((res) => {
-                      if (Number(res.code) === 0) {
-                        alert("You have accepted the friend request.");
-                        props.onSetFriendChange(!props.friendChange);
-                        props.onSetFriendRequestChange(!props.friendRequestChange);
-                        props.onhandleFriendRequestClose();
-                      }
-                      else {
-                        alert(res.info);
-                      }
-                    })
-                    .catch((error) => {
-                      alert(error.info);
-                    });
-                  }}>Accept</Button>
-                  <Button onClick={() => {
-                    handleFriendRequest(request, false)
-                    .then((res) => res.json())
-                    .then((res) => {
-                      if (Number(res.code) === 0) {
-                        alert("You have rejected the friend request.");
-                        props.onSetFriendChange(!props.friendChange);
-                        props.onSetFriendRequestChange(!props.friendRequestChange);
-                        props.onhandleFriendRequestClose();
-                      }
-                      else {
-                        alert(res.info);
-                      }
-                    })
-                    .catch((error) => {
-                      alert(error.info);
-                    });
-                  }}>Reject</Button>
+                  <Grid container direction="row" alignItems="center" justifyContent="flex-end" spacing={1} style={{ width: '500px' }}>
+                    <Grid item>
+                      <Button
+                        style={{ textTransform: "none", padding: "5px 10px", borderWidth: "2px" }}
+                        variant="contained"
+                        color="primary"
+                        onClick={() => {
+                          handleFriendRequest(request, true)
+                            .then((res) => res.json())
+                            .then((res) => {
+                              if (Number(res.code) === 0) {
+                                alert("You have accepted the friend request.");
+                                props.onSetFriendChange(!props.friendChange);
+                                props.onSetFriendRequestChange(!props.friendRequestChange);
+                                props.onhandleFriendRequestClose();
+                              } else {
+                                alert(res.info);
+                              }
+                            })
+                            .catch((error) => {
+                              alert(error.info);
+                            });
+                        }}>Accept</Button>
+                    </Grid>
+                    <Grid item>
+                      <Box width={3}></Box>
+                    </Grid>
+                    <Grid item>
+                      <Button
+                        style={{ textTransform: "none", padding: "5px 10px", borderWidth: "2px" }}
+                        variant="contained"
+                        color="primary"
+                        onClick={() => {
+                          handleFriendRequest(request, false)
+                            .then((res) => res.json())
+                            .then((res) => {
+                              if (Number(res.code) === 0) {
+                                alert("You have rejected the friend request.");
+                                props.onSetFriendChange(!props.friendChange);
+                                props.onSetFriendRequestChange(!props.friendRequestChange);
+                                props.onhandleFriendRequestClose();
+                              } else {
+                                alert(res.info);
+                              }
+                            })
+                            .catch((error) => {
+                              alert(error.info);
+                            });
+                        }}>Reject</Button>
+                    </Grid>
+                  </Grid>
                 </>
               ) : null}
             </ListItem>

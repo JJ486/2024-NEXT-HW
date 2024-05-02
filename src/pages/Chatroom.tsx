@@ -1,10 +1,9 @@
-import React, { useState, useEffect, useCallback, use } from "react";
-import { makeStyles } from "@material-ui/core/styles";
+import React, { useState, useEffect, useCallback } from "react";
 import Paper from "@material-ui/core/Paper";
 import Grid from "@material-ui/core/Grid";
 import Divider from "@material-ui/core/Divider";
-import TextField from "@material-ui/core/TextField";
 import Typography from "@material-ui/core/Typography";
+import Box from "@mui/material/Box";
 import List from "@material-ui/core/List";
 import ListItem from "@material-ui/core/ListItem";
 import ListItemIcon from "@material-ui/core/ListItemIcon";
@@ -37,29 +36,9 @@ const { useRequest } = require("ahooks");
 import { addFriend, deleteFriend, addFriendTag, getTagFriends } from "../api/friend";
 import CustomInput from "../components/CustomInput";
 import SelectFriendTagDialog from "../components/SelectTagDialog";
-
-const useStyles = makeStyles({
-  table: {
-    minWidth: 650,
-  },
-  chatSection: {
-    width: "100%",
-    height: "93vh"
-  },
-  headBG: {
-    backgroundColor: "#e0e0e0"
-  },
-  borderRight500: {
-    borderRight: "1px solid #e0e0e0"
-  },
-  messageArea: {
-    height: "77vh",
-    overflowY: "auto"
-  }
-});
+import "./Chatroom.module.css";
 
 const Chatroom = () => {
-  const classes = useStyles();
   const [showChats, setShowChats] = useState(true);
   const [addFriendOpen, setAddFriendOpen] = useState(false);
   const [friendUsername, setFriendUsername] = useState("");
@@ -80,6 +59,20 @@ const Chatroom = () => {
   const [tags, setTags] = useState<string[]>([]);
   const [useTag, setUseTag] = useState(false);
   const [tagFriendList, setTagFriendList] = useState<Friend[]>([]);
+  const [message, setMessage] = useState("");
+  const [messages, setMessages] = useState<Array<{ id: number, text: string, sender: string }>>([]);
+
+  const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setMessage(event.target.value);
+  };
+
+  const handleSend = () => {
+    if (message.trim()) {
+      const newMessage = { id: messages.length + 1, text: message, sender: 'self' };
+      setMessages([...messages, newMessage]);  // Add new message to messages array
+      setMessage("");  // Clear the message input after sending
+    }
+  };
 
   const router = useRouter();
   const dispatch = useDispatch();
@@ -190,6 +183,7 @@ const Chatroom = () => {
   const ShowFriends = () => {
     setShowChats(false);
     setUseTag(false);
+    setFriendChange(!friendChange);
   };
 
   useEffect(() => {
@@ -337,7 +331,7 @@ const Chatroom = () => {
         });
         setTags(friendTags);
       });
-    }, 100);
+    }, 200);
   }, [friendChange]);
 
   useEffect(() => {
@@ -351,18 +345,25 @@ const Chatroom = () => {
         const count = updateUnreadFriendRequestsCounts(friendRequests);
         setUnreadFriendRequestsCount(count);
       });
-    }, 300);
+    }, 200);
   }, [friendRequestChange]);
 
   return (
     <div>
-      <Grid container>
-        <Grid item xs={12} >
-          <Typography variant="h5" className="header-message">Capybara Chat</Typography>
+      <Divider />
+      <Grid container style={{ borderRight: "1px solid #e0e0e0", borderLeft: "1px solid #e0e0e0"}}>
+        <Grid item>
+          <Box width={15}></Box>
+        </Grid>
+        <Grid item>
+          <Box display="inline-block" borderRadius={10} bgcolor="primary.main" p={1} mt={0.8} mb={0.8} style={{ textTransform: "none", padding: "5px 20px"}}>
+            <Typography variant="h5" style={{ color: "white", fontWeight: "bold" }}>Capybara Chat</Typography>
+          </Box>
         </Grid>
       </Grid>
-      <Grid container component={Paper} className={classes.chatSection}>
-        <Grid item xs={3} className={classes.borderRight500}>
+      <Divider />
+      <Grid container style={{ width: "100%", height: "89vh" }}>
+        <Grid item xs={3} style={{ borderRight: "1px solid #e0e0e0", borderLeft: "1px solid #e0e0e0", maxHeight: "89vh" }}>
           <List>
             <ListItem button onClick={handleClick}>
               <ListItemIcon>
@@ -427,56 +428,83 @@ const Chatroom = () => {
             </ListItem>
           </List>
           <Divider />
-          <Grid item xs={12} style={{padding: "10px"}}>
-            <TextField id="outlined-basic-email" label="Search" variant="outlined" fullWidth />
+          <Grid item xs={12} style={{ maxHeight: "66vh", overflowY: "auto" }}>
+            <List>
+              {showChats ? (
+                <>
+                  <ListItem button key="RemySharp">
+                    <ListItemIcon>
+                      <Avatar alt="Remy Sharp" src="https://material-ui.com/static/images/avatar/1.jpg" />
+                    </ListItemIcon>
+                    <ListItemText primary="Remy Sharp">Remy Sharp</ListItemText>
+                    <ListItemText secondary="online" style={{ textAlign: "right" }}></ListItemText>
+                  </ListItem>
+                  {/* Add other chat items */}
+                </>
+              ) : (
+                <FriendList
+                  friends={useTag ? tagFriendList : friendsList}
+                  onDeleteFriend={handleDeleteFriend}
+                  addTagOpen={addTagOpen}
+                  setAddTagOpen={setAddTagOpen}
+                  friendTag={friendTag}
+                  setFriendTag={setFriendTag}
+                  tagFriend={tagFriend}
+                  setTagFriend={setTagFriend}
+                  onhandleClickAddFriendTagOpen={handleClickAddFriendTagOpen}
+                  onhandleClickAddFriendTagClose={handleClickAddFriendTagClose}
+                  onhandleAddFriendTag={handleAddFriendTag}
+                ></FriendList>
+              )}
+            </List>
           </Grid>
-          <Divider />
-          <List>
-            {showChats ? (
-              <>
-                <ListItem button key="RemySharp">
-                  <ListItemIcon>
-                    <Avatar alt="Remy Sharp" src="https://material-ui.com/static/images/avatar/1.jpg" />
-                  </ListItemIcon>
-                  <ListItemText primary="Remy Sharp">Remy Sharp</ListItemText>
-                  <ListItemText secondary="online" style={{ textAlign: "right" }}></ListItemText>
-                </ListItem>
-                {/* Add other chat items */}
-              </>
-            ) : (
-              <FriendList
-                friends={useTag ? tagFriendList : friendsList}
-                onDeleteFriend={handleDeleteFriend}
-                addTagOpen={addTagOpen}
-                setAddTagOpen={setAddTagOpen}
-                friendTag={friendTag}
-                setFriendTag={setFriendTag}
-                tagFriend={tagFriend}
-                setTagFriend={setTagFriend}
-                onhandleClickAddFriendTagOpen={handleClickAddFriendTagOpen}
-                onhandleClickAddFriendTagClose={handleClickAddFriendTagClose}
-                onhandleAddFriendTag={handleAddFriendTag}
-              ></FriendList>
-            )}
-          </List>
         </Grid>
-
         <Grid item xs={9}>
-          <List className={classes.messageArea}>
+          <List style={{ borderRight: "1px solid #e0e0e0", height: "74vh", overflowY: "auto"}}>
+            <List>
+              {messages.map((message) => (
+                <ListItem key={message.id}>
+                  <Grid container justifyContent={message.sender === 'self' ? 'flex-end' : 'flex-start'}>
+                    <Paper style={{
+                      backgroundColor: message.sender === 'self' ? '#d4edda' : '#f8f9fa',
+                      padding: '10px',
+                      borderRadius: '10px',
+                      maxWidth: '80%'
+                    }}>
+                      <ListItemText
+                        primary={message.text}
+                        style={{ textAlign: message.sender === 'self' ? 'right' : 'left', color: message.sender === 'self' ? 'green' : 'black' }}
+                      />
+                    </Paper>
+                  </Grid>
+                </ListItem>
+              ))}
+            </List>
             {/* Display messages based on selected chat/friend */}
           </List>
           <Divider />
-          <Grid container style={{padding: "20px"}}>
+          <Grid container style={{ borderRight: "1px solid #e0e0e0", padding: "10px"}}>
             <Grid item xs={11}>
-              <CustomInput />
+              <CustomInput
+                label="Type your message here"
+                value={message}
+                onChange={handleChange}
+                onKeyPress={(event: { key: string; }) => {
+                  if (event.key === 'Enter') {
+                    handleSend();
+                  }
+                }}
+              />
             </Grid>
-            <Grid xs={1} style={{ textAlign: "right" }}>
-              <Fab color="primary" aria-label="add"><SendIcon /></Fab>
+            <Grid xs={1} container justifyContent="center" alignItems="center">
+              <Fab style={{ width: "54px", height: "54px" }} color="primary" aria-label="send" onClick={handleSend}>
+                <SendIcon />
+              </Fab>
             </Grid>
           </Grid>
         </Grid>
-
       </Grid>
+      <Divider />
     </div>
   );
 };
