@@ -1,6 +1,19 @@
 import Cookies from "js-cookie";
 import { FriendRequest } from "./types";
 
+export async function findFriend(username: string) {
+  const header = new Headers();
+  const jwtToken = Cookies.get("jwt_token");
+  if (jwtToken) {
+    header.append("authorization", jwtToken);
+  }
+  const response = fetch(`/api/chat/find_user/${username}`, {
+    method: "GET",
+    headers: header,
+  });
+  return response;
+}
+
 export async function addFriend(username: string) {
   const header = new Headers();
   const jwtToken = Cookies.get("jwt_token");

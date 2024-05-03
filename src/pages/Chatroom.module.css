@@ -1,5 +1,0 @@
-.container {
-  width: 1000px; /* 设置固定的宽度 */
-  height: 600px; /* 设置固定的高度 */
-  overflow: auto; /* 如果内容超出容器大小，则显示滚动条 */
-}

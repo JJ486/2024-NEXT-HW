@@ -2,6 +2,13 @@ import TextField from "@mui/material/TextField";
 import Box from "@mui/material/Box";
 
 export default function CustomInput(props: any) {
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      props.onEnter();
+    }
+  };
+
   return (
     <Box>
       <label style={{ fontWeight: "bold" }} htmlFor={props.id}>
@@ -21,6 +28,7 @@ export default function CustomInput(props: any) {
         type={props.type}
         InputProps={props.InputProps}
         select={props.select}
+        onKeyDown={handleKeyDown}
       >
         {props.content}
       </TextField>

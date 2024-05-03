@@ -27,16 +27,17 @@ import { useRouter } from "next/router";
 import { setName, setToken } from "../redux/auth";
 import { useDispatch } from "react-redux";
 import AddFriendDialog from "../components/AddFriendDialog";
-import { Friend, FriendRequest } from "../api/types";
+import { Conversation, Friend, FriendRequest, Message } from "../api/types";
 import FriendList from "../components/FriendList";
-import { friendsDB, updateUnreadFriendRequestsCounts } from "../api/db";
-import { useFriendListener } from "../api/websocket";
+import { friendsDB, updateUnreadFriendRequestsCounts, conversationsDB } from "../api/db";
+import { useWebsocketListener } from "../api/websocket";
 import FriendRequestDialog from "../components/FriendRequestDialog";
 const { useRequest } = require("ahooks");
-import { addFriend, deleteFriend, addFriendTag, getTagFriends } from "../api/friend";
+import { findFriend, addFriend, deleteFriend, addFriendTag, getTagFriends } from "../api/friend";
 import CustomInput from "../components/CustomInput";
 import SelectFriendTagDialog from "../components/SelectTagDialog";
-import "./Chatroom.module.css";
+import { addConversation } from "../api/chat";
+import MessageBubble from "../components/MessageBubble";
 
 const Chatroom = () => {
   const [showChats, setShowChats] = useState(true);
@@ -60,7 +61,9 @@ const Chatroom = () => {
   const [useTag, setUseTag] = useState(false);
   const [tagFriendList, setTagFriendList] = useState<Friend[]>([]);
   const [message, setMessage] = useState("");
-  const [messages, setMessages] = useState<{ id: number, text: string, sender: string }[]>([]);
+  const [messageList, setMessageList] = useState<Message[]>([]);
+  const [activateConversationId, setActivateConversationId] = useState<number>(0);
+  const [conversationChange, setConversationChange] = useState(false);
 
   const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setMessage(event.target.value);
@@ -68,8 +71,8 @@ const Chatroom = () => {
 
   const handleSend = () => {
     if (message.trim()) {
-      const newMessage = { id: messages.length + 1, text: message, sender: "self" };
-      setMessages([...messages, newMessage]);
+      const newMessage = { id: messageList.length + 1, conversation: 0, sender: "liuwz", content: message, timestamp:"2024/5/3", read: ["liuwz"], unread: [], reply_to: 0, reply_by: []};
+      setMessageList([...messageList, newMessage]);
       setMessage("");
     }
   };
@@ -113,37 +116,26 @@ const Chatroom = () => {
   };
 
   const handleFindFriend = () => {
-    const header = new Headers();
-    const jwtToken = Cookies.get("jwt_token");
-    if (jwtToken) {
-      header.append("authorization", jwtToken);
-    }
-    else {
-      router.push(`/SignIn`);
-    }
     if (friendUsername === "") {
       alert("Please enter a username.");
       return;
     }
-    fetch(`/api/chat/find_user/${friendUsername}`, {
-      method: "GET",
-      headers: header,
-    })
-    .then((res) => res.json())
-    .then((res) => {
-      if (Number(res.code) === 0) {
-        setFriendNichname(res.userinfo.nickname);
-        setFriendPhone(res.userinfo.phone);
-        setFriendEmail(res.userinfo.email);
-        setShowInfo(true);
-      }
-      else {
-        alert(res.info);
-      }
-    })
-    .catch((error) => {
-      alert(error.info);
-    });
+    findFriend(friendUsername)
+      .then((res) => res.json())
+      .then((res) => {
+        if (Number(res.code) === 0) {
+          setFriendNichname(res.userinfo.nickname);
+          setFriendPhone(res.userinfo.phone);
+          setFriendEmail(res.userinfo.email);
+          setShowInfo(true);
+        }
+        else {
+          alert(res.info);
+        }
+      })
+      .catch((error) => {
+        alert(error.info);
+      });
   };
 
   const handleSelechTagClose = () => {
@@ -226,18 +218,45 @@ const Chatroom = () => {
   const updateFriendRequest = useCallback(() => {
     friendsDB.pullFriendRequests()
       .then((count) => {
-        console.log("count:", count);
         setUnreadFriendRequestsCount(count);
         setFriendChange(!friendChange);
         refresh();
       });
   }, [refresh]);
 
-  useEffect(() => {
-    updateFriendRequest();
-  }, [updateFriendRequest]);
+  // useEffect(() => {
+  //   updateFriendRequest();
+  // }, [updateFriendRequest]);
 
-  useFriendListener(updateFriendRequest);
+  useWebsocketListener(updateFriendRequest, 0);
+
+  const updateNewFriend = useCallback((friendname?: string) => {
+    let temp_friend: Friend = {username: "", email: "", tag: ""};
+    if (friendname) {
+      findFriend(friendname)
+        .then((res) => res.json())
+        .then((res) => {
+          if (Number(res.code) === 0) {
+            temp_friend.username = res.userinfo.username;
+            temp_friend.email = res.userinfo.email;
+            temp_friend.tag = "";
+          }
+          else {
+            alert(res.info);
+          }
+        })
+        .catch((error) => {
+          alert(error.info);
+        });
+    }
+    friendsDB.friends.bulkPut([temp_friend])
+      .then(() => {
+        refresh();
+      });
+    setFriendsList([...friendsList, temp_friend]);
+  }, [refresh]);
+
+  useWebsocketListener(updateNewFriend, 1);
 
   const handleClick = () => {
     router.push({
@@ -347,6 +366,26 @@ const Chatroom = () => {
       });
     }, 200);
   }, [friendRequestChange]);
+
+  const handleNewPrivateConversation = (username: string) => {
+    addConversation(0, [authUserName, username])
+      .then((res) => res.json())
+      .then((res) => {
+        if (Number(res.code) === 0) {
+          setConversationChange(!conversationChange);
+        }
+        else {
+          alert(res.info);
+        }
+      })
+      .catch((error) => {
+        alert(error.message);
+      });
+  };
+
+  useEffect(() => {
+    conversationsDB.pullConversations();
+  }, [conversationChange]);
 
   return (
     <div>
@@ -461,25 +500,10 @@ const Chatroom = () => {
         </Grid>
         <Grid item xs={9}>
           <List style={{ borderRight: "1px solid #e0e0e0", height: "74vh", overflowY: "auto"}}>
-            <List>
-              {messages.map((message) => (
-                <ListItem key={message.id}>
-                  <Grid container justifyContent={message.sender === "self" ? "flex-end" : "flex-start"}>
-                    <Paper style={{
-                      backgroundColor: message.sender === "self" ? "#d4edda" : "#f8f9fa",
-                      padding: "10px",
-                      borderRadius: "10px",
-                      maxWidth: "80%"
-                    }}>
-                      <ListItemText
-                        primary={message.text}
-                        style={{ textAlign: message.sender === "self" ? "right" : "left", color: message.sender === "self" ? "green" : "black" }}
-                      />
-                    </Paper>
-                  </Grid>
-                </ListItem>
-              ))}
-            </List>
+            <MessageBubble
+              messages={messageList}
+              authUserName={authUserName}
+            ></MessageBubble>
             {/* Display messages based on selected chat/friend */}
           </List>
           <Divider />
@@ -489,15 +513,11 @@ const Chatroom = () => {
                 label="Type your message here"
                 value={message}
                 onChange={handleChange}
-                onKeyPress={(event: { key: string; }) => {
-                  if (event.key === "Enter") {
-                    handleSend();
-                  }
-                }}
+                onEnter={handleSend}
               />
             </Grid>
             <Grid xs={1} container justifyContent="center" alignItems="center">
-              <Fab style={{ width: "54px", height: "54px" }} color="primary" aria-label="send" onClick={handleSend}>
+              <Fab tabIndex={0} style={{ width: "54px", height: "54px" }} color="primary" aria-label="send" onClick={handleSend}>
                 <SendIcon />
               </Fab>
             </Grid>

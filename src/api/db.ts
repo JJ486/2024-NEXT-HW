@@ -1,6 +1,7 @@
 import Dexie from "dexie";
-import { Friend, FriendRequest } from "./types";
+import { Friend, FriendRequest, Conversation, Message } from "./types";
 import { getFriends, getFriendRequests } from "./friend";
+import { getWholeConversations } from "./chat";
 
 export function updateUnreadFriendRequestsCounts(friendRequests: FriendRequest[]) {
   const newRequests = friendRequests.filter((request) => request.status === "Pending");
@@ -79,4 +80,42 @@ export class CachedFriends extends Dexie {
   }
 }
 
+export class CachedConversations extends Dexie {
+  conversations: Dexie.Table<Conversation, number>;
+  messages: Dexie.Table<Message, number>;
+
+  constructor() {
+    super("CachedConversations");
+    this.version(1).stores({
+      conversations: "&id, type, members",
+      messages: "&id, conversation, sender, content, timestamp, read, unread, reply_to, reply_by",
+    });
+    this.conversations = this.table("conversations");
+    this.messages = this.table("messages");
+  }
+
+  async clearCachedData() {
+    await this.conversations.clear();
+    await this.messages.clear();
+  }
+
+  async pullConversations() {
+    try {
+      const res = await getWholeConversations();
+      const data = await res.json();
+      if (Number(data.code) === 0) {
+        this.conversations.clear();
+        this.conversations.bulkPut(data.conversations);
+      }
+      else {
+        alert(data.info);
+      }
+    }
+    catch (error: any) {
+      alert(error.info);
+    }
+  }
+}
+
 export const friendsDB = new CachedFriends();
+export const conversationsDB = new CachedConversations();
