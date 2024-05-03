@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { List, ListItem, ListItemIcon, ListItemText, Avatar } from "@material-ui/core";
 import md5 from "md5";
 import { Friend } from "../api/types";
@@ -10,35 +10,46 @@ import LocalOfferIcon from "@mui/icons-material/LocalOffer";
 import AddFriendTagDialog from "./AddFriendTagDialog";
 
 export default function FriendList(props: any) {
+  const [avatars, setAvatars] = useState<{ [key: string]: string }>({});
+  
+  useEffect(() => {
+    const fetchAvatars = async () => {
+      const newAvatars: { [key: string]: string } = {};
+      for (const friend of props.friends) {
+        const hash = md5(friend.email.trim().toLowerCase());
+        newAvatars[friend.username] = hash;
+      }
+      setAvatars(newAvatars);
+    };
+    fetchAvatars();
+    console.log(avatars);
+  }, [props.friends]);
+
   return (
     <List>
-      {props.friends.map((friend: Friend) => {
-        const hash = md5(friend.email.trim().toLowerCase());
-        const gravatarUrl = `https://www.gravatar.com/avatar/${hash}?d=identicon&s=150`;
-        return (
-          <ListItem button key={friend.username}>
-            <ListItemIcon>
-              <Avatar alt={friend.username} src={gravatarUrl} />
-            </ListItemIcon>
-            <ListItemText primary={friend.username} secondary={friend.tag} />
-            <ListItemSecondaryAction>
-            <IconButton aria-label="Add Tag" onClick={() => props.onhandleClickAddFriendTagOpen(friend.username)}>
-              <LocalOfferIcon />
-            </IconButton>
-            <AddFriendTagDialog
-              open={props.addTagOpen}
-              friendTag={props.friendTag}
-              setFriendTag={props.setFriendTag}
-              onhandleAddFriendTagClose={props.onhandleClickAddFriendTagClose}
-              onhandleAddFriendTag={props.onhandleAddFriendTag}
-            ></AddFriendTagDialog>
-            <IconButton aria-label="Delete" onClick={() => props.onDeleteFriend(friend.username)}>
-              <TrashCanIcon />
-            </IconButton>
-            </ListItemSecondaryAction>
-          </ListItem>
-        );
-      })}
+      {props.friends.map((friend: Friend) => (
+        <ListItem button key={friend.username}>
+          <ListItemIcon>
+            <Avatar alt={friend.username} src={`https://www.gravatar.com/avatar/${avatars[friend.username]}?d=identicon&s=150`} />
+          </ListItemIcon>
+          <ListItemText primary={friend.username} secondary={friend.tag} />
+          <ListItemSecondaryAction>
+          <IconButton aria-label="Add Tag" onClick={() => props.onhandleClickAddFriendTagOpen(friend.username)}>
+            <LocalOfferIcon />
+          </IconButton>
+          <AddFriendTagDialog
+            open={props.addTagOpen}
+            friendTag={props.friendTag}
+            setFriendTag={props.setFriendTag}
+            onhandleAddFriendTagClose={props.onhandleClickAddFriendTagClose}
+            onhandleAddFriendTag={props.onhandleAddFriendTag}
+          ></AddFriendTagDialog>
+          <IconButton aria-label="Delete" onClick={() => props.onDeleteFriend(friend.username)}>
+            <TrashCanIcon />
+          </IconButton>
+          </ListItemSecondaryAction>
+        </ListItem>
+      ))}
     </List>
   );
 }
