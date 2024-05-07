@@ -2,6 +2,7 @@ export interface Conversation {
   id: number;
   type: number;
   members: string[];
+  unread: number;
 }
 
 export interface Message {
@@ -14,6 +15,11 @@ export interface Message {
   unread: string[];
   reply_to: number;
   reply_by: string[];
+}
+
+export interface ConversationMessage {
+  id: number;
+  messages: Message[];
 }
 
 export interface Friend {

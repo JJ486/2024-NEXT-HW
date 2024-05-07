@@ -16,14 +16,12 @@ export const FriendRequestList: React.FC<FriendRequestListProps> = ({ friendRequ
         const gravatarUrl = `https://www.gravatar.com/avatar/${hash}?d=identicon&s=150`;
         const requestStatus = request.status === "Pending" ? "Pending" : request.status === "Accept" ? "Accepted" : "Rejected";
         const requestRole = request.role === "receiver" ? "Receiver" : "Sender";
-        // Format timestamp
-        const timestamp = new Date(parseInt(request.timestamp)).toLocaleString();
         return (
           <ListItem button key={request.username}>
             <ListItemIcon>
               <Avatar alt={request.username} src={gravatarUrl} />
             </ListItemIcon>
-            <ListItemText primary={`${request.nickname} (${request.username})`} secondary={`Status: ${requestStatus}, Role: ${requestRole}, Time: ${timestamp}`} />
+            <ListItemText primary={`${request.nickname} (${request.username})`} secondary={`Status: ${requestStatus}, Role: ${requestRole}, Time: ${request.timestamp}`} />
           </ListItem>
         );
       })}

@@ -11,6 +11,7 @@ import { CheckCircleOutline, RadioButtonUnchecked } from "@mui/icons-material";
 import md5 from "md5";
 import { findFriend } from "../api/friend";
 import { getConversation } from "../api/chat";
+import { Conversation } from "../api/types";
 
 export default function MessageBubble(props: any) {
   const [avatars, setAvatars] = useState<{ [key: string]: string }>({});
@@ -31,21 +32,21 @@ export default function MessageBubble(props: any) {
   }, [props.messages]);
 
   const getHash = async (username: string) => {
-  try {
-    const res = await findFriend(username);
-    const data = await res.json();
-    if (Number(data.code) === 0) {
-      return md5(data.userinfo.email.trim().toLowerCase());
-    }
-    else {
-      alert(data.info);
+    try {
+      const res = await findFriend(username);
+      const data = await res.json();
+      if (Number(data.code) === 0) {
+        return md5(data.userinfo.email.trim().toLowerCase());
+      }
+      else {
+        alert(data.info);
+        return null;
+      }
+    } catch (error: any) {
+      alert(error.info);
       return null;
     }
-  } catch (error: any) {
-    alert(error.info);
-    return null;
-  }
-};
+  };
 
   const getConversationType = (id: number) => {
     let type = 0;
@@ -67,7 +68,7 @@ export default function MessageBubble(props: any) {
     
   return (
     <List>
-      {props.messages.map((message: Message) => (
+      {props.conversations.some((conversation: Conversation) => conversation.id === 1) ? (props.messages.map((message: Message) => (
         <ListItem key={message.id}>
           <Grid container justifyContent={message.sender === props.authUserName ? "flex-end" : "flex-start"}>
             {message.sender === props.authUserName ? (
@@ -86,10 +87,9 @@ export default function MessageBubble(props: any) {
                       />
                     </Paper>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "8px" }}>
-                      {/* {getConversationType(message.conversation) === 0 ? ( */}
-                      {message.conversation === 0 ? (
+                      {getConversationType(message.conversation) === 0 ? (
                         <div style={{ marginTop: "1px", marginRight: "3px" }}>
-                          {message.read && message.read.length > 0 ? <CheckCircleOutline fontSize="small" style={{ color: "green" }} /> : <RadioButtonUnchecked fontSize="small" color="disabled" />}
+                          {message.read && message.read.length > 1 ? <CheckCircleOutline fontSize="small" style={{ color: "green" }} /> : <RadioButtonUnchecked fontSize="small" color="disabled" />}
                         </div>
                       ) : (
                         // 群聊后续实现
@@ -127,10 +127,9 @@ export default function MessageBubble(props: any) {
                     </Paper>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "8px" }}>
                       <Typography variant="caption">{message.timestamp}</Typography>
-                      {/* {getConversationType(message.conversation) === 0 ? ( */}
-                      {message.conversation === 0 ? (
+                      {getConversationType(message.conversation) === 0 ? (
                         <div style={{ marginTop: "1px", marginLeft: "3px" }}>
-                          {message.read && message.read.length > 0 ? <CheckCircleOutline fontSize="small" style={{ color: "green" }} /> : <RadioButtonUnchecked fontSize="small" color="disabled" />}
+                          {message.read && message.read.length > 1 ? <CheckCircleOutline fontSize="small" style={{ color: "green" }} /> : <RadioButtonUnchecked fontSize="small" color="disabled" />}
                         </div>
                       ) : (
                         // 群聊后续实现
@@ -143,7 +142,7 @@ export default function MessageBubble(props: any) {
             )}
           </Grid>
         </ListItem>
-      ))}
+      ))) : null}
     </List>
   );
 }

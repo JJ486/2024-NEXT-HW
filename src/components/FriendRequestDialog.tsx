@@ -64,6 +64,7 @@ export default function FriendRequestDialog(props: any) {
                                 props.onSetFriendChange(!props.friendChange);
                                 props.onSetFriendRequestChange(!props.friendRequestChange);
                                 props.onhandleFriendRequestClose();
+                                props.onhandleNewPrivateConversation(request.username);
                               }
                               else {
                                 alert(res.info);
