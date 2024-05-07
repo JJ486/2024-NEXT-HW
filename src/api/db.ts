@@ -119,7 +119,7 @@ export class CachedConversations extends Dexie {
 
   async pullWholeConversationMessages() {
     const conversations = await this.pullWholeConversations();
-    let conversationUnreadCounts: { [key: number]: number } = {};
+    const conversationUnreadCounts: { [key: number]: number } = {};
     for (const conversation of conversations) {
       try {
         console.log(conversation.id);

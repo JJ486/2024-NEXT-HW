@@ -10,7 +10,7 @@ import AddFriendTagDialog from "./AddFriendTagDialog";
 
 export default function FriendList(props: any) {
   const [avatars, setAvatars] = useState<{ [key: string]: string }>({});
-  
+
   useEffect(() => {
     const fetchAvatars = async () => {
       const newAvatars: { [key: string]: string } = {};

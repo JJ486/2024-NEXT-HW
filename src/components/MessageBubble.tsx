@@ -42,7 +42,8 @@ export default function MessageBubble(props: any) {
         alert(data.info);
         return null;
       }
-    } catch (error: any) {
+    }
+    catch (error: any) {
       alert(error.info);
       return null;
     }
@@ -65,7 +66,7 @@ export default function MessageBubble(props: any) {
       });
     return type;
   };
-    
+
   return (
     <List>
       {props.conversations.some((conversation: Conversation) => conversation.id === 1) ? (props.messages.map((message: Message) => (

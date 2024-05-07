@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import Grid from "@material-ui/core/Grid";
 import Divider from "@material-ui/core/Divider";
 import Typography from "@material-ui/core/Typography";
-import Box from "@mui/material/Box";3
+import Box from "@mui/material/Box";
 import List from "@material-ui/core/List";
 import ListItem from "@material-ui/core/ListItem";
 import ListItemIcon from "@material-ui/core/ListItemIcon";
@@ -73,7 +73,7 @@ const Chatroom = () => {
   const router = useRouter();
   const dispatch = useDispatch();
   const authUserName = useSelector((state: RootState) => state.auth.name);
-  
+
   useEffect(() => {
     const cookie_jwtToken = Cookies.get("jwt_token");
     if (!cookie_jwtToken) {
@@ -220,7 +220,7 @@ const Chatroom = () => {
   });
 
   const updateNewFriend = useCallback((friendname?: string) => {
-    let temp_friend: Friend = {username: "", email: "", tag: ""};
+    const temp_friend: Friend = {username: "", email: "", tag: ""};
     if (friendname) {
       findFriend(friendname)
         .then((res) => res.json())
@@ -336,7 +336,7 @@ const Chatroom = () => {
   }, [friendChange]);
 
   const handleFriendtoChat = (friendname: string) => {
-    console.log(conversationsDB.conversations)
+    console.log(conversationsDB.conversations);
     conversationsDB.conversations
       .filter(conversation => {
         return conversation.members.length === 2 &&
@@ -425,8 +425,9 @@ const Chatroom = () => {
       conversationsDB.pullNewMessages(parseInt(conversationId))
         .then((count) => {
           conversationsDB.conversationMessages.get(parseInt(conversationId)).then((conversationMessages) => {
-            if (conversationMessages)
+            if (conversationMessages) {
               setMessageList(conversationMessages.messages);
+            }
           });
           setConversationUnreadCounts({...conversationUnreadCounts, [parseInt(conversationId)]: count});
           conversationMessagesRefresh();

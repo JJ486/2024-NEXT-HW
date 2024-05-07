@@ -44,7 +44,7 @@ export async function addConversation(type: number, members: string[]) {
   return response;
 }
 
-export async function addMessage(conversation: number, content: string, reply_to: number) {
+export async function addMessage(conversation: number, content: string, replyTo: number) {
   const header = new Headers();
   const jwtToken = Cookies.get("jwt_token");
   if (jwtToken) {
@@ -53,7 +53,7 @@ export async function addMessage(conversation: number, content: string, reply_to
   const requestBody = {
     conversation,
     content,
-    reply_to,
+    reply_to: replyTo,
   };
   const response = fetch(`/api/chat/message`, {
     method: "POST",

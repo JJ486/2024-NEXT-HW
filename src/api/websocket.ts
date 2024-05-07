@@ -29,12 +29,12 @@ export const useWebsocketListener = (fn: (arg1?: string, args2?: string) => void
             const parts = event.data.split(" ");
             const username = parts[4];
             const conversationid = parts[5];
-            fn(username, conversationid); 
+            fn(username, conversationid);
           }
         }
         else if (type === 3) {
           if (event.data.substring(0, 27) === "new message in conversation") {
-            var conversationid = event.data.substring(28);
+            const conversationid = event.data.substring(28);
             fn(conversationid);
           }
         }
