@@ -1,7 +1,7 @@
 import Dexie from "dexie";
 import { Friend, FriendRequest, Conversation, ConversationMessage, Message } from "./types";
 import { getFriends, getFriendRequests } from "./friend";
-import { getWholeConversations, getWholeMessages, getNewMessages, getConversation, readConversation } from "./chat";
+import { getWholeConversations, getWholeMessages, getNewMessages, getConversation, readConversation, deleteMessage } from "./chat";
 
 export function updateUnreadFriendRequestsCounts(friendRequests: FriendRequest[]) {
   const newRequests = friendRequests.filter((request) => request.status === "Pending");
@@ -104,8 +104,8 @@ export class CachedConversations extends Dexie {
       const res = await getWholeConversations();
       const data = await res.json();
       if (Number(data.code) === 0) {
+        this.conversations.clear();
         this.conversations.bulkPut(data.conversations);
-        console.log(data.conversations);
         return data.conversations;
       }
       else {
@@ -122,7 +122,6 @@ export class CachedConversations extends Dexie {
     const conversationUnreadCounts: { [key: number]: number } = {};
     for (const conversation of conversations) {
       try {
-        console.log(conversation.id);
         const res = await getWholeMessages(conversation.id);
         const data = await res.json();
         if (Number(data.code) === 0) {
@@ -130,7 +129,6 @@ export class CachedConversations extends Dexie {
             id: conversation.id,
             messages: data.messages,
           });
-          console.log(data.messages);
           conversationUnreadCounts[conversation.id] = data.unread;
         }
         else {
@@ -167,13 +165,12 @@ export class CachedConversations extends Dexie {
 
   async pullNewMessages(conversationId: number) {
     const conversationExists = await this.conversations.get(conversationId);
-    console.log(conversationExists);
-    if (conversationExists === undefined) {
+    if (!conversationExists) {
       try {
         const res = await getConversation(conversationId);
         const data = await res.json();
         if (Number(data.code) === 0) {
-          this.conversations.put(data.conversation);
+          await this.conversations.put(data.conversations[0]);
         }
         else {
           alert(data.info);
@@ -190,12 +187,10 @@ export class CachedConversations extends Dexie {
         const res = await getNewMessages(conversationId, lastMessageId);
         const data = await res.json();
         if (Number(data.code) === 0) {
-          console.log(data.messages);
           for (const message of data.messages) {
             conversationMessage.messages.push(message);
           }
           await this.conversationMessages.put(conversationMessage);
-          console.log(data.unread);
           return data.unread;
         }
         else {
@@ -208,12 +203,12 @@ export class CachedConversations extends Dexie {
     }
     else {
       try {
-        const res = await getNewMessages(conversationId, 0);
+        const res = await getNewMessages(conversationId, -1);
         const data = await res.json();
         if (Number(data.code) === 0) {
           const newConversation: ConversationMessage = {
             id: conversationId,
-            messages: [data.messages],
+            messages: data.messages,
           };
           await this.conversationMessages.put(newConversation);
           return data.unread;
@@ -276,18 +271,28 @@ export class CachedConversations extends Dexie {
     }
   }
 
-  async getMessagesbyTime(conversationId: number, time: string) {
+  async getMessagesByTime(conversationId: number, time: string) {
     const conversationMessage = await this.conversationMessages.get(conversationId);
     if (conversationMessage) {
-      const filteredMessages = conversationMessage.messages.filter(message => message.timestamp === time);
+      const targetDate = new Date(time);
+      const targetYear = targetDate.getFullYear();
+      const targetMonth = targetDate.getMonth();
+      const targetDay = targetDate.getDate();
+      const filteredMessages = conversationMessage.messages.filter(message => {
+        const messageDate  = new Date(message.timestamp);
+        const messageYear = messageDate.getFullYear();
+        const messageMonth = messageDate.getMonth();
+        const messageDay = messageDate.getDate();
+        return messageYear === targetYear && messageMonth === targetMonth && messageDay === targetDay;
+      });
       return filteredMessages;
     }
     else {
       return [];
     }
-  }
+}
 
-  async getMessagesbyMember(conversationId: number, member: string) {
+  async getMessagesByMember(conversationId: number, member: string) {
     const conversationMessage = await this.conversationMessages.get(conversationId);
     if (conversationMessage) {
       const filteredMessages = conversationMessage.messages.filter(message => message.sender === member);
@@ -298,12 +303,26 @@ export class CachedConversations extends Dexie {
     }
   }
 
-  async deleteMessages(conversationId: number, messageId: number) {
+  async deleteMessage(conversationId: number, messageId: number) {
+    deleteMessage(messageId)
+      .then((res) => res.json())
+      .then((res) => {
+        if (Number(res.code) === 0) {
+          alert("You have deleted the message.");
+        }
+        else {
+          alert(res.info);
+        }
+      })
+      .catch((error) => {
+        alert(error.info);
+      });
     const conversationMessage = await this.conversationMessages.get(conversationId);
     if (conversationMessage) {
       const filteredMessages = conversationMessage.messages.filter(message => message.id !== messageId);
       conversationMessage.messages = filteredMessages;
       await this.conversationMessages.put(conversationMessage);
+      return filteredMessages;
     }
   }
 }

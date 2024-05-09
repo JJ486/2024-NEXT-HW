@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import Grid from "@material-ui/core/Grid";
 import Divider from "@material-ui/core/Divider";
 import Typography from "@material-ui/core/Typography";
@@ -13,6 +13,7 @@ import IconButton from "@material-ui/core/IconButton";
 import AddIcon from "@mui/icons-material/Add";
 import MailIcon from "@mui/icons-material/Mail";
 import FeedIcon from "@mui/icons-material/Feed";
+import CancelScheduleSendIcon from "@mui/icons-material/CancelScheduleSend";
 import Fab from "@material-ui/core/Fab";
 import SendIcon from "@mui/icons-material/Send";
 import ChatIcon from "@mui/icons-material/Chat";
@@ -35,7 +36,7 @@ const { useRequest } = require("ahooks");
 import { findFriend, addFriend, deleteFriend, addFriendTag, getTagFriends } from "../api/friend";
 import CustomInput from "../components/CustomInput";
 import SelectFriendTagDialog from "../components/SelectTagDialog";
-import { addConversation, addMessage, readConversation } from "../api/chat";
+import { addConversation, addMessage, getConversation } from "../api/chat";
 import MessageBubble from "../components/MessageBubble";
 import ConversationList from "../components/ConversationList";
 import ChatHistoryDialog from "../components/ChatHistoryDialog";
@@ -66,13 +67,19 @@ const Chatroom = () => {
   const [activateConversationId, setActivateConversationId] = useState<number>(-1);
   const [conversationChange, setConversationChange] = useState(false);
   const [conversationList, setConversationList] = useState<Conversation[]>([]);
-  const [activateConversationSent, setActivateConversationSent] = useState<number>(-2);
   const [conversationUnreadCounts, setConversationUnreadCounts] = useState<{ [key: number]: number }>({});
   const [showChatHistory, setShowChatHistory] = useState(false);
+  const [activateConversationType, setActivateConversationType] = useState<number>(0);
+  const [authEmail, setAuthEmail] = useState("");
+  const [isReply, setIsReply] = useState(false);
+  const [replyMessage, setReplyMessage] = useState<Message>({id: -1, conversation: -1, sender: "", content: "", timestamp: "", read: [], reply_to: -1, reply_by: -1});
+  const [totalUnreadCounts, setTotalUnreadCounts] = useState<number>(0);
+  const [initialRender, setInitialRender] = useState(true);
 
   const router = useRouter();
   const dispatch = useDispatch();
   const authUserName = useSelector((state: RootState) => state.auth.name);
+  const listRef = useRef<HTMLUListElement>(null);
 
   useEffect(() => {
     const cookie_jwtToken = Cookies.get("jwt_token");
@@ -92,6 +99,7 @@ const Chatroom = () => {
           if (Number(res.code) === 0) {
             dispatch(setToken(cookie_jwtToken));
             dispatch(setName(res.userinfo.username));
+            setAuthEmail(res.userinfo.email);
           }
           else {
             alert(res.info);
@@ -191,6 +199,7 @@ const Chatroom = () => {
   // FriendRequest
 
   const handleClickFriendRequestOpen = async () => {
+    setFriendRequestChange(!friendRequestChange);
     setFriendRequestOpen(true);
   };
 
@@ -336,7 +345,6 @@ const Chatroom = () => {
   }, [friendChange]);
 
   const handleFriendtoChat = (friendname: string) => {
-    console.log(conversationsDB.conversations);
     conversationsDB.conversations
       .filter(conversation => {
         return conversation.members.length === 2 &&
@@ -394,25 +402,77 @@ const Chatroom = () => {
     });
   };
 
-  const handleSend = () => {
+  const handleSend = async () => {
     if (message.trim()) {
-      addMessage(activateConversationId, message, -1)
-        .then((res) => res.json())
-        .then((res) => {
-          if (Number(res.code) === 0) {
-            const newMessage: Message = res.message;
+      if (isReply) {
+        try {
+          const finalReplyMessage = "Reply to Message [" + replyMessage.content + "]\n-------------------------\n" + message;
+          const res = await addMessage(activateConversationId, finalReplyMessage, replyMessage.id);
+          const data = await res.json();
+          if (Number(data.code) === 0) {
+            const newMessage: Message = data.message;
             addNewMessage(newMessage);
             setMessage("");
-            setActivateConversationSent(activateConversationId);
+            const conversation = await conversationsDB.conversations.get(activateConversationId);
+            if (conversation) {
+              await conversationsDB.conversations.delete(activateConversationId);
+              const conversations = await conversationsDB.conversations.toArray();
+              conversations.unshift(conversation);
+              setConversationList(conversations);
+              if (listRef.current) {
+                listRef.current.scrollTop = listRef.current.scrollHeight;
+              }
+              await conversationsDB.conversations.bulkPut(conversations);
+            }
           }
           else {
-            alert(res.info);
+            alert(data.info);
           }
-        })
-        .catch((error) => {
+        }
+        catch (error: any) {
           alert(error.info);
-        });
+        }
+        setIsReply(false);
+      }
+      else {
+        try {
+          const res = await addMessage(activateConversationId, message, -1);
+          const data = await res.json();
+          if (Number(data.code) === 0) {
+            const newMessage: Message = data.message;
+            addNewMessage(newMessage);
+            setMessage("");
+            const conversation = await conversationsDB.conversations.get(activateConversationId);
+            if (conversation) {
+              await conversationsDB.conversations.delete(activateConversationId);
+              const conversations = await conversationsDB.conversations.toArray();
+              conversations.unshift(conversation);
+              setConversationList(conversations);
+              if (listRef.current) {
+                listRef.current.scrollTop = listRef.current.scrollHeight;
+              }
+              await conversationsDB.conversations.bulkPut(conversations);
+            }
+          }
+          else {
+            alert(data.info);
+          }
+        }
+        catch (error: any) {
+          alert(error.info);
+        }
+      }
     }
+    conversationsDB.sendReadConversation(activateConversationId, authUserName)
+      .then((messages) => {
+        if (messages) {
+          setMessageList(messages);
+          setConversationUnreadCounts({...conversationUnreadCounts, [activateConversationId]: 0});
+          setTotalUnreadCounts(preTotalUnreadCounts => {
+            return preTotalUnreadCounts - conversationUnreadCounts[activateConversationId];
+          });
+        }
+      });
   };
 
   const { refresh: conversationMessagesRefresh } = useRequest(async () => {
@@ -424,12 +484,27 @@ const Chatroom = () => {
     if (conversationId) {
       conversationsDB.pullNewMessages(parseInt(conversationId))
         .then((count) => {
+          setConversationChange(prevConversationChange => {
+            return !prevConversationChange;
+          });
           conversationsDB.conversationMessages.get(parseInt(conversationId)).then((conversationMessages) => {
             if (conversationMessages) {
               setMessageList(conversationMessages.messages);
             }
           });
-          setConversationUnreadCounts({...conversationUnreadCounts, [parseInt(conversationId)]: count});
+          setConversationUnreadCounts(prevCounts => {
+            const updatedCounts = { ...prevCounts };
+            if (Object.prototype.hasOwnProperty.call(updatedCounts, parseInt(conversationId))) {
+              updatedCounts[parseInt(conversationId)] += count;
+            }
+            else {
+              updatedCounts[parseInt(conversationId)] = count;
+            }
+            return updatedCounts;
+          });
+          setTotalUnreadCounts(preTotalUnreadCounts => {
+            return preTotalUnreadCounts + count;
+          });
           conversationMessagesRefresh();
         });
     }
@@ -444,17 +519,17 @@ const Chatroom = () => {
       .then((res) => res.json())
       .then((res) => {
         if (Number(res.code) === 0) {
-          const tempConv: Conversation = {id: res.conversation.id, type: res.conversation.type, members: res.conversation.members, unread: 0};
+          const tempConv: Conversation = {id: res.conversation.id, type: res.conversation.type, members: res.conversation.members};
           conversationsDB.addNewConversations(tempConv);
-          setConversationChange(!conversationChange);
+          setConversationChange(prevConversationChange => {
+            return !prevConversationChange;
+          });
           setActivateConversationId(res.conversation.id);
-          setActivateConversationSent(res.conversation.id);
           addMessage(tempConv.id, "I passed your friend verification request. Now we can start chatting.", -1)
             .then((res) => res.json())
             .then((res) => {
               if (Number(res.code) === 0) {
                 const newMessage: Message = res.message;
-                console.log(newMessage);
                 addNewMessage(newMessage);
               }
               else {
@@ -476,15 +551,29 @@ const Chatroom = () => {
 
   // conversationList
 
+  const getActivateConversationTitle = (conversationId: number) => {
+    const members = conversationList.filter(conversation => conversation.id === conversationId).at(0)?.members;
+    if (members) {
+      for (const member of members) {
+        if (member !== authUserName) {
+          return member;
+        }
+      }
+    }
+  };
+
   const handleChangeActivateConversation = (conversationId: number) => {
     conversationsDB.sendReadConversation(conversationId, authUserName)
       .then((messages) => {
         if (messages) {
-          console.log(messages);
           setMessageList(messages);
         }
+        setActivateConversationType(getConversationType(conversationId));
         setActivateConversationId(conversationId);
         setConversationUnreadCounts({...conversationUnreadCounts, [conversationId]: 0});
+        setTotalUnreadCounts(preTotalUnreadCounts => {
+          return preTotalUnreadCounts - conversationUnreadCounts[conversationId];
+        });
       });
   };
 
@@ -503,18 +592,83 @@ const Chatroom = () => {
   useWebsocketListener(updateConversationRead, 2);
 
   useEffect(() => {
-    setTimeout(() => {
-      conversationsDB.conversations.toArray().then((conversations) => {
-        setConversationList(conversations);
-      });
-    }, 200);
+    if (!initialRender) {
+      setTimeout(() => {
+        conversationsDB.conversationMessages.toArray().then((conversationMessages) => {
+          const messageTimestamps = conversationMessages.map((conversationMessage) => {
+            const lastMessage = conversationMessage.messages[conversationMessage.messages.length - 1];
+            return {
+              id: conversationMessage.id,
+              timestamp: new Date(lastMessage.timestamp).getTime()
+            };
+          });
+          messageTimestamps.sort((a, b) => b.timestamp - a.timestamp);
+          const sortedIds = messageTimestamps.map((item) => item.id);
+          conversationsDB.conversations.toArray().then((conversations) => {
+            const sortedConversations = sortedIds.map((id) => conversations.find((conversation) => conversation.id === id));
+            const filteredConversations = sortedConversations.filter((conversation) => conversation !== undefined) as Conversation[];
+            setConversationList(filteredConversations);
+          });
+        });
+      }, 200);
+    }
+    else {
+      setInitialRender(false);
+    }
   }, [conversationChange]);
 
   useEffect(() => {
     conversationsDB.pullWholeConversationMessages().then((conversationUnreadCounts) => {
       setConversationUnreadCounts(conversationUnreadCounts);
+      const totalCount = Object.values(conversationUnreadCounts).reduce((total, count) => total + count, 0);
+      setTotalUnreadCounts(totalCount);
+      conversationsDB.conversationMessages.toArray().then((conversationMessages) => {
+        const messageTimestamps = conversationMessages.map((conversationMessage) => {
+          const lastMessage = conversationMessage.messages[conversationMessage.messages.length - 1];
+          return {
+            id: conversationMessage.id,
+            timestamp: new Date(lastMessage.timestamp).getTime()
+          };
+        });
+        messageTimestamps.sort((a, b) => b.timestamp - a.timestamp);
+        const sortedIds = messageTimestamps.map((item) => item.id);
+        conversationsDB.conversations.toArray().then((conversations) => {
+          const sortedConversations = sortedIds.map((id) => conversations.find((conversation) => conversation.id === id));
+          const filteredConversations = sortedConversations.filter((conversation) => conversation !== undefined) as Conversation[];
+          setConversationList(filteredConversations);
+        });
+      });
     });
   }, []);
+
+  const getConversationType = (id: number) => {
+    let type = 0;
+    getConversation(id)
+      .then((res) => res.json())
+      .then((res) => {
+        if (Number(res.code) === 0) {
+          type = res.conversations.type;
+        }
+        else {
+          alert(res.info);
+        }
+      })
+      .catch((error) => {
+        alert(error.info);
+      });
+    return type;
+  };
+
+  // Reply Message
+
+  const handleReplyMessage = (message: Message) =>{
+    setIsReply(true);
+    setReplyMessage(message);
+  };
+
+  const handleCancelReply = () => {
+    setIsReply(false);
+  };
 
   // Chat History
 
@@ -522,24 +676,34 @@ const Chatroom = () => {
     setShowChatHistory(true);
   };
 
+  const handleChatHistoryClose = () => {
+    setShowChatHistory(false);
+  };
+
+  const deleteMessage = (messageId: number) => {
+    conversationsDB.deleteMessage(activateConversationId, messageId)
+      .then((messages) => {
+        if (messages) {
+          setMessageList(messages);
+        }
+      });
+  };
+
   // return components
 
   return (
     <div>
       <Divider />
-      <Grid container style={{ borderRight: "1px solid #e0e0e0", borderLeft: "1px solid #e0e0e0"}}>
-        <Grid item>
-          <Box width={15}></Box>
-        </Grid>
-        <Grid item>
-          <Box display="inline-block" borderRadius={10} bgcolor="primary.main" p={1} mt={0.8} mb={0.8} style={{ textTransform: "none", padding: "5px 20px"}}>
-            <Typography variant="h5" style={{ color: "white", fontWeight: "bold" }}>Capybara Chat</Typography>
-          </Box>
-        </Grid>
-      </Grid>
-      <Divider />
-      <Grid container style={{ width: "100%", height: "89vh" }}>
-        <Grid item xs={3} style={{ borderRight: "1px solid #e0e0e0", borderLeft: "1px solid #e0e0e0", maxHeight: "89vh" }}>
+      <Grid container style={{ width: "100%", height: "97.4vh" }}>
+        <Grid item xs={3} style={{ borderRight: "1px solid #e0e0e0", borderLeft: "1px solid #e0e0e0", maxHeight: "97.4vh" }}>
+          <Grid container justifyContent="center" alignItems="center" style={{ height: "10vh" }}>
+            <Grid item>
+              <Box display="inline-block" borderRadius={10} bgcolor="primary.main" p={1} mt={0.8} mb={0.8} style={{ textTransform: "none", padding: "5px 20px"}}>
+                <Typography variant="h5" style={{ color: "white", fontWeight: "bold" }}>Capybara Chat</Typography>
+              </Box>
+            </Grid>
+          </Grid>
+          <Divider />
           <List>
             <ListItem button onClick={handleClick}>
               <ListItemIcon>
@@ -549,7 +713,9 @@ const Chatroom = () => {
             </ListItem>
             <ListItem button onClick={ShowChats}>
               <ListItemIcon>
-                <ChatIcon />
+                <Badge badgeContent={totalUnreadCounts} color="error">
+                  <ChatIcon />
+                </Badge>
               </ListItemIcon>
               <ListItemText primary="Chats"></ListItemText>
             </ListItem>
@@ -572,7 +738,7 @@ const Chatroom = () => {
                   onhandleSelectTag={handleGetTagFriends}
                 ></SelectFriendTagDialog>
                 <IconButton aria-label="Mail" onClick={handleClickFriendRequestOpen}>
-                  <Badge badgeContent={unreadFriendRequestsCount} color="secondary">
+                  <Badge badgeContent={unreadFriendRequestsCount} color="error">
                     <MailIcon />
                   </Badge>
                 </IconButton>
@@ -605,16 +771,16 @@ const Chatroom = () => {
             </ListItem>
           </List>
           <Divider />
-          <Grid item xs={12} style={{ maxHeight: "66vh", overflowY: "auto" }}>
+          <Grid item xs={12} style={{ maxHeight: "64.2vh", overflowY: "auto" }}>
             <List>
               {showChats ? (
                 <ConversationList
                   conversations={conversationList}
                   authUserName={authUserName}
+                  authEmail={authEmail}
                   messages={messageList}
                   onhandleChangeActivateConversation={handleChangeActivateConversation}
                   activateConversationId={activateConversationId}
-                  activateConversationSent={activateConversationSent}
                   conversationUnreadCounts={conversationUnreadCounts}
                 ></ConversationList>
               ) : (
@@ -640,39 +806,68 @@ const Chatroom = () => {
             <Grid item xs={9}></Grid>
           ) : (
             <Grid item xs={9}>
-              {/*TODO: Add conversation title*/}
-              <List style={{ borderRight: "1px solid #e0e0e0", height: "74vh", overflowY: "auto"}}>
+              <Grid container style={{ height: "10vh", display: "flex", alignItems: "center" }}>
+                <Typography variant="h5" style={{ marginLeft: "25px"}}>
+                  {getActivateConversationTitle(activateConversationId)}
+                </Typography>
+              </Grid>
+              <Divider/>
+              <List ref={listRef} style={{ borderRight: "1px solid #e0e0e0", height: "72.4vh", overflowY: "auto"}}>
                 <MessageBubble
+                  listRef={listRef}
                   messages={messageList}
                   conversations={conversationList}
                   authUserName={authUserName}
+                  authEmail={authEmail}
                   activateConversationId={activateConversationId}
+                  activateConversationType={activateConversationType}
+                  onhandleReplyMessage={handleReplyMessage}
+                  onhandleDeleteMessage={deleteMessage}
                 ></MessageBubble>
                 {/* Display messages based on selected chat/friend */}
               </List>
               <Divider />
               <Grid container style={{ borderRight: "1px solid #e0e0e0", padding: "10px"}}>
-                <Grid item xs={1}>
-                  <IconButton aria-label="Selet Tag" onClick={handleShowChatHistory}>
-                    <FeedIcon />
-                  </IconButton>
-                  <ChatHistoryDialog
-                    opne={showChatHistory}
-                  ></ChatHistoryDialog>
+                <Grid container xs={1}>
+                  <Grid item style={{ marginLeft: "8px" }}>
+                    <IconButton aria-label="Show Chat History" onClick={handleShowChatHistory}>
+                      <FeedIcon style={{ fontSize: "2.8rem" }}/>
+                    </IconButton>
+                    <ChatHistoryDialog
+                      open={showChatHistory}
+                      onhandleClose={handleChatHistoryClose}
+                      messages={messageList}
+                      onDeleteMessage={deleteMessage}
+                      activateConversationId={activateConversationId}
+                      authEmail={authEmail}
+                      authUserName={authUserName}
+                    ></ChatHistoryDialog>
+                  </Grid>
                 </Grid>
-                <Grid item xs={10}>
+                <Grid item xs={isReply ? 9 : 10}>
                   <CustomInput
-                    label="Type your message here"
+                    label={isReply ? `Reply to Message [${replyMessage.content}]` :   "Type your message here"}
                     value={message}
                     onChange={handleChange}
                     onEnter={handleSend}
                   />
                 </Grid>
-                <Grid xs={1} container justifyContent="center" alignItems="center">
-                  <Fab tabIndex={0} style={{ width: "54px", height: "54px" }} color="primary" aria-label="send" onClick={handleSend}>
-                    <SendIcon />
-                  </Fab>
-                </Grid>
+                {isReply ? (
+                  <>
+                    <Grid container xs={1} justifyContent="center" alignItems="center">
+                      <Grid item style={{ marginLeft: "15px"}}>
+                        <IconButton aria-label="Cancel Reply" onClick={handleCancelReply}>
+                          <CancelScheduleSendIcon style={{ fontSize: "2rem" }}/>
+                        </IconButton>
+                      </Grid>
+                    </Grid>
+                  </>
+              ): (null)}
+              <Grid xs={1} container justifyContent="center" alignItems="center">
+                <Fab tabIndex={0} style={{ width: "54px", height: "54px" }} color="primary" aria-label="send" onClick={handleSend}>
+                  <SendIcon />
+                </Fab>
+              </Grid>
               </Grid>
             </Grid>
           )}

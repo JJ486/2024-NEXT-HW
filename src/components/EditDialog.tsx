@@ -77,8 +77,8 @@ export default function EditDialog(props: any) {
         ></CustomInput>
       </DialogContent>
       <DialogActions>
-        <Button onClick={props.onhandleClose}>Cancel</Button>
-        <Button onClick={props.onhandleSubmit} color="primary">
+        <Button style={{ textTransform: "none", fontSize: "1.1rem" }} onClick={props.onhandleClose}>Cancel</Button>
+        <Button style={{ textTransform: "none", fontSize: "1.1rem" }} onClick={props.onhandleSubmit} color="primary">
           Submit
         </Button>
       </DialogActions>

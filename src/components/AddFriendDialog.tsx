@@ -45,11 +45,11 @@ export default function AddFriendDialog(props: any) {
         )}
       </DialogContent>
       <DialogActions>
-        <Button onClick={props.onhandleAddFriendClose}>Cancel</Button>
-        <Button onClick={props.onhandleFindFriend} color="primary">
+        <Button style={{ textTransform: "none", fontSize: "1.1rem" }} onClick={props.onhandleAddFriendClose}>Cancel</Button>
+        <Button style={{ textTransform: "none", fontSize: "1.1rem" }} onClick={props.onhandleFindFriend} color="primary">
           Find
         </Button>
-        <Button onClick={props.onhandleSubmitFriendRequest} color="primary">
+        <Button style={{ textTransform: "none", fontSize: "1.1rem" }} onClick={props.onhandleSubmitFriendRequest} color="primary">
           Submit
         </Button>
       </DialogActions>

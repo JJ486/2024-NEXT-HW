@@ -26,8 +26,8 @@ export default function AddFriendTagDialog(props: any) {
         ></CustomInput>
       </DialogContent>
       <DialogActions>
-        <Button onClick={props.onhandleAddFriendTagClose}>Cancel</Button>
-        <Button onClick={props.onhandleAddFriendTag} color="primary">
+        <Button style={{ textTransform: "none", fontSize: "1.1rem" }} onClick={props.onhandleAddFriendTagClose}>Cancel</Button>
+        <Button style={{ textTransform: "none", fontSize: "1.1rem" }} onClick={props.onhandleAddFriendTag} color="primary">
           Submit
         </Button>
       </DialogActions>

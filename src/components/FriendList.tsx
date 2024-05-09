@@ -21,7 +21,6 @@ export default function FriendList(props: any) {
       setAvatars(newAvatars);
     };
     fetchAvatars();
-    console.log(avatars);
   }, [props.friends]);
 
   return (

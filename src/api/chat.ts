@@ -69,7 +69,7 @@ export async function getWholeMessages(conversationId: number) {
   if (jwtToken) {
     header.append("authorization", jwtToken);
   }
-  const response = fetch(`/api/chat/message/?conversation=${conversationId}&after=0`, {
+  const response = fetch(`/api/chat/message?conversation=${conversationId}&after=0`, {
     method: "GET",
     headers: header,
   });
@@ -82,7 +82,7 @@ export async function getNewMessages(conversationId: number, lastMessageId: numb
   if (jwtToken) {
     header.append("authorization", jwtToken);
   }
-  const response = fetch(`/api/chat/message/?conversation=${conversationId}&after=${lastMessageId}`, {
+  const response = fetch(`/api/chat/message?conversation=${conversationId}&after=${lastMessageId}`, {
     method: "GET",
     headers: header,
   });
@@ -99,6 +99,23 @@ export async function readConversation(conversationId: number) {
     conversation: conversationId,
   };
   const response = fetch(`/api/chat/read_conversation`, {
+    method: "POST",
+    headers: header,
+    body: JSON.stringify(requestBody),
+  });
+  return response;
+}
+
+export async function deleteMessage(messageId: number) {
+  const header = new Headers();
+  const jwtToken = Cookies.get("jwt_token");
+  if (jwtToken) {
+    header.append("authorization", jwtToken);
+  }
+  const requestBody = {
+    message: messageId,
+  };
+  const response = fetch(`/api/chat/delete_message`, {
     method: "POST",
     headers: header,
     body: JSON.stringify(requestBody),

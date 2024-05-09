@@ -2,7 +2,6 @@ export interface Conversation {
   id: number;
   type: number;
   members: string[];
-  unread: number;
 }
 
 export interface Message {
@@ -12,9 +11,8 @@ export interface Message {
   content: string;
   timestamp: string;
   read: string[];
-  unread: string[];
   reply_to: number;
-  reply_by: string[];
+  reply_by: number;
 }
 
 export interface ConversationMessage {

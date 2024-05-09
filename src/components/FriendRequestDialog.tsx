@@ -110,7 +110,7 @@ export default function FriendRequestDialog(props: any) {
         </List>
       </DialogContent>
       <DialogActions>
-        <Button onClick={props.onhandleFriendRequestClose}>Cancel</Button>
+        <Button style={{ textTransform: "none", fontSize: "1.1rem" }} onClick={props.onhandleFriendRequestClose}>Cancel</Button>
       </DialogActions>
     </Dialog>
   );

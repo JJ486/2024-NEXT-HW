@@ -30,7 +30,7 @@ export default function SelectFriendTagDialog(props: any) {
             </Grid>
           ))}
           <Grid item style={{ marginTop: "10px" }}>
-            <Button onClick={props.onhandleSelechTagClose}>Cancel</Button>
+            <Button style={{ textTransform: "none", fontSize: "1.1rem" }} onClick={props.onhandleSelechTagClose}>Cancel</Button>
           </Grid>
         </Grid>
       </DialogActions>
