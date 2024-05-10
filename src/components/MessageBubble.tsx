@@ -85,17 +85,29 @@ export default function MessageBubble(props: any) {
       if (paperRef) {
         setPaperWidths((prevWidths) => ({
           ...prevWidths,
-          [messageId]: paperRef.clientWidth,
+          [messageId]: paperRef.clientWidth
         }));
       }
     });
-  }, [paperRefs.current]);
+  }, [paperRefs.current, props.activateConversationId]);
 
   const locateRepliedMessage = (RepliedMessageId: number) => {
     handleClose();
     const repliedMessageElement = document.getElementById(`message-${RepliedMessageId}`);
     if (repliedMessageElement) {
       props.listRef.current.scrollTop = repliedMessageElement.offsetTop;
+      const originalBackgroundColor = repliedMessageElement.style.backgroundColor;
+      const blinkDuration = 1000;
+      const blinkInterval = 200;
+      let isBlinkOn = true;
+      const blinkIntervalId = setInterval(() => {
+        repliedMessageElement.style.backgroundColor = isBlinkOn ? "#D3D3D3" : originalBackgroundColor;
+        isBlinkOn = !isBlinkOn;
+      }, blinkInterval);
+      setTimeout(() => {
+        clearInterval(blinkIntervalId);
+        repliedMessageElement.style.backgroundColor = originalBackgroundColor;
+      }, blinkDuration);
     }
   };
 
@@ -108,20 +120,23 @@ export default function MessageBubble(props: any) {
               <>
                 <Grid item style={{ maxWidth: "500px", marginRight: "15px" }}>
                   <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end" }}>
-                    <Paper
-                      style={{
-                        backgroundColor: "#d4edda",
-                        padding: "6px 10px",
-                        borderRadius: "10px",
-                        display: "inline-block",
-                      }}
-                      onContextMenu={(event) => handleClick(event, message.id)}
-                    >
-                      <ListItemText
-                        primary={message.content}
-                        style={{ textAlign: "left", color: "green", whiteSpace: "pre-wrap" }}
-                      />
-                    </Paper>
+                    <div style={{ display: "flex", flexDirection: "row", alignItems: "flex-end" }}>
+                      <div style={{ display: "inline-block", marginRight: "8px" }}>{message.reply_by > 0 ? `(${ message.reply_by})` : null}</div>
+                      <Paper
+                        style={{
+                          backgroundColor: "#d4edda",
+                          padding: "6px 10px",
+                          borderRadius: "10px",
+                          display: "inline-block",
+                        }}
+                        onContextMenu={(event) => handleClick(event, message.id)}
+                      >
+                        <ListItemText
+                          primary={message.content}
+                          style={{ textAlign: "left", color: "green", whiteSpace: "pre-wrap" }}
+                        />
+                      </Paper>
+                    </div>
                     <Menu
                       id={`simple-menu-${message.id}`}
                       anchorEl={anchorEls[message.id]}
@@ -203,21 +218,24 @@ export default function MessageBubble(props: any) {
                 />
                 <Grid item style={{ maxWidth: "500px", marginLeft: "15px" }}>
                   <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
-                    <Paper
-                      ref={((ref: HTMLDivElement | null) => (paperRefs.current[message.id] = ref))}
-                      style={{
-                        backgroundColor: "#f8f9fa",
-                        padding: "6px 10px",
-                        borderRadius: "10px",
-                        display: "inline-block",
-                      }}
-                      onContextMenu={(event) => handleClick(event, message.id)}
-                    >
-                      <ListItemText
-                        primary={message.content}
-                        style={{ textAlign: "left", color: "black", whiteSpace: "pre-wrap" }}>
-                      </ListItemText>
-                    </Paper>
+                    <div style={{ display: "flex", flexDirection: "row", alignItems: "flex-end" }}>
+                      <Paper
+                        ref={((ref: HTMLDivElement | null) => (paperRefs.current[message.id] = ref))}
+                        style={{
+                          backgroundColor: "#f8f9fa",
+                          padding: "6px 10px",
+                          borderRadius: "10px",
+                          display: "inline-block",
+                        }}
+                        onContextMenu={(event) => handleClick(event, message.id)}
+                      >
+                        <ListItemText
+                          primary={message.content}
+                          style={{ textAlign: "left", color: "black", whiteSpace: "pre-wrap" }}>
+                        </ListItemText>
+                      </Paper>
+                      <div style={{ display: "inline-block", marginLeft: "8px" }}>{message.reply_by > 0 ? `(${ message.reply_by})` : null}</div>
+                    </div>
                     <Menu
                       id={`simple-menu-${message.id}`}
                       anchorEl={anchorEls[message.id]}

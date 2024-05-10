@@ -189,6 +189,12 @@ export class CachedConversations extends Dexie {
         if (Number(data.code) === 0) {
           for (const message of data.messages) {
             conversationMessage.messages.push(message);
+            if (message.reply_to !== -1) {
+              const index = conversationMessage.messages.findIndex(tempMessage => tempMessage.id === message.reply_to);
+              if (index !== -1) {
+                conversationMessage.messages[index].reply_by += 1;
+              }
+            }
           }
           await this.conversationMessages.put(conversationMessage);
           return data.unread;
@@ -219,6 +225,18 @@ export class CachedConversations extends Dexie {
       }
       catch (error: any) {
         alert(error.info);
+      }
+    }
+  }
+
+  async addReplyByNumber(conversationId: number, messageId: number) {
+    const conversationMessage = await this.conversationMessages.get(conversationId);
+    if (conversationMessage) {
+      const message = conversationMessage.messages.find(message => message.id === messageId);
+      if (message) {
+        message.reply_by += 1;
+        await this.conversationMessages.put(conversationMessage);
+        return conversationMessage.messages;
       }
     }
   }

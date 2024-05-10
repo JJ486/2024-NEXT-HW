@@ -72,7 +72,7 @@ const Chatroom = () => {
   const [activateConversationType, setActivateConversationType] = useState<number>(0);
   const [authEmail, setAuthEmail] = useState("");
   const [isReply, setIsReply] = useState(false);
-  const [replyMessage, setReplyMessage] = useState<Message>({id: -1, conversation: -1, sender: "", content: "", timestamp: "", read: [], reply_to: -1, reply_by: -1});
+  const [replyMessage, setReplyMessage] = useState<Message>({id: -1, conversation: -1, sender: "", content: "", timestamp: "", read: [], reply_to: -1, reply_by: 0});
   const [totalUnreadCounts, setTotalUnreadCounts] = useState<number>(0);
   const [initialRender, setInitialRender] = useState(true);
 
@@ -405,6 +405,7 @@ const Chatroom = () => {
   const handleSend = async () => {
     if (message.trim()) {
       if (isReply) {
+        conversationsDB.addReplyByNumber(activateConversationId, replyMessage.id);
         try {
           const finalReplyMessage = "Reply to Message [" + replyMessage.content + "]\n-------------------------\n" + message;
           const res = await addMessage(activateConversationId, finalReplyMessage, replyMessage.id);
@@ -466,6 +467,7 @@ const Chatroom = () => {
     conversationsDB.sendReadConversation(activateConversationId, authUserName)
       .then((messages) => {
         if (messages) {
+          console.log(messages);
           setMessageList(messages);
           setConversationUnreadCounts({...conversationUnreadCounts, [activateConversationId]: 0});
           setTotalUnreadCounts(preTotalUnreadCounts => {
