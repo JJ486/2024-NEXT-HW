@@ -15,6 +15,7 @@ export const useWebsocketListener = (fn: (arg1?: string, args2?: string) => void
       };
 
       ws.onmessage = async (event) => {
+        console.log(event.data);
         if (type === 0) {
           if (event.data === "new friend request") fn();
         }

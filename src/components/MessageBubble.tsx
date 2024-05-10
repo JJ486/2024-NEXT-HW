@@ -55,13 +55,10 @@ export default function MessageBubble(props: any) {
         });
         setAvatars(newAvatars);
         setUsername(newUsername);
-        if (props.listRef.current) {
-          props.listRef.current.scrollTop = props.listRef.current.scrollHeight;
-        }
       }
     };
     fetchAvatars();
-  }, [props.messages]);
+  }, [props.activateConversationId]);
 
   const getHash = async (username: string) => {
     return friendsDB.friends.filter(friend => friend.username === username).toArray()
@@ -74,6 +71,12 @@ export default function MessageBubble(props: any) {
         }
       });
   };
+
+  useEffect(() => {
+    if (props.listRef.current) {
+      props.listRef.current.scrollTop = props.listRef.current.scrollHeight;
+    }
+  }, [props.messages]);
 
   const getTime = (timestamp: string) => {
     const date = new Date(timestamp);

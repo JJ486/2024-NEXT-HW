@@ -20,11 +20,12 @@ import ChatIcon from "@mui/icons-material/Chat";
 import PeopleIcon from "@mui/icons-material/People";
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import LocalOfferIcon from "@mui/icons-material/LocalOffer";
+import GroupAddIcon from "@mui/icons-material/GroupAdd";
 import Cookies from "js-cookie";
 import { useSelector } from "react-redux";
 import { RootState } from "../redux/store";
 import { useRouter } from "next/router";
-import { setName, setToken } from "../redux/auth";
+import { setName, setToken, } from "../redux/auth";
 import { useDispatch } from "react-redux";
 import AddFriendDialog from "../components/AddFriendDialog";
 import { Conversation, Friend, FriendRequest, Message } from "../api/types";
@@ -32,7 +33,6 @@ import FriendList from "../components/FriendList";
 import { friendsDB, updateUnreadFriendRequestsCounts, conversationsDB } from "../api/db";
 import { useWebsocketListener } from "../api/websocket";
 import FriendRequestDialog from "../components/FriendRequestDialog";
-const { useRequest } = require("ahooks");
 import { findFriend, addFriend, deleteFriend, addFriendTag, getTagFriends } from "../api/friend";
 import CustomInput from "../components/CustomInput";
 import SelectFriendTagDialog from "../components/SelectTagDialog";
@@ -40,6 +40,7 @@ import { addConversation, addMessage, getConversation } from "../api/chat";
 import MessageBubble from "../components/MessageBubble";
 import ConversationList from "../components/ConversationList";
 import ChatHistoryDialog from "../components/ChatHistoryDialog";
+import AddGroupDialog from "../components/AddGroupDialog";
 
 const Chatroom = () => {
   const [showChats, setShowChats] = useState(true);
@@ -70,11 +71,14 @@ const Chatroom = () => {
   const [conversationUnreadCounts, setConversationUnreadCounts] = useState<{ [key: number]: number }>({});
   const [showChatHistory, setShowChatHistory] = useState(false);
   const [activateConversationType, setActivateConversationType] = useState<number>(0);
-  const [authEmail, setAuthEmail] = useState("");
   const [isReply, setIsReply] = useState(false);
   const [replyMessage, setReplyMessage] = useState<Message>({id: -1, conversation: -1, sender: "", content: "", timestamp: "", read: [], reply_to: -1, reply_by: 0});
   const [totalUnreadCounts, setTotalUnreadCounts] = useState<number>(0);
   const [initialRender, setInitialRender] = useState(true);
+  const [addGroupOpen, setAddGroupOpen] = useState(false);
+  const [groupMembers, setGroupMembers] = useState<string[]>([]);
+  const [groupName, setGroupName] = useState("");
+  const [authEmail, setAuthEmail] = useState("");
 
   const router = useRouter();
   const dispatch = useDispatch();
@@ -113,6 +117,30 @@ const Chatroom = () => {
       }
     }
   }, [authUserName, dispatch, router]);
+
+  useEffect(() => {
+    const cookie_jwtToken = Cookies.get("jwt_token");
+    if (cookie_jwtToken) {
+      const header = new Headers();
+      header.append("authorization", cookie_jwtToken);
+      fetch(`/api/chat/get_userinfo`, {
+        method: "GET",
+        headers: header,
+      })
+      .then((res) => res.json())
+      .then((res) => {
+        if (Number(res.code) === 0) {
+          setAuthEmail(res.userinfo.email);
+        }
+        else {
+          alert(res.info);
+        }
+      })
+      .catch((error: any) => {
+        alert(error.info);
+      });
+    }
+  }, []);
 
   const handleClick = () => {
     router.push({
@@ -208,27 +236,16 @@ const Chatroom = () => {
     setFriendRequestChange(!friendRequestChange);
   };
 
-  const { refresh: friendRequestsRefresh } = useRequest(async () => {
-    const friendRequests = await friendsDB.friendRequests.toArray();
-    return friendRequests;
-  });
-
-  const updateFriendRequest = useCallback(() => {
+  const updateFriendRequest = () => {
     friendsDB.pullFriendRequests()
       .then((count) => {
         setUnreadFriendRequestsCount(count);
-        friendRequestsRefresh();
       });
-  }, [friendRequestsRefresh]);
+  };
 
   useWebsocketListener(updateFriendRequest, 0);
 
-  const { refresh: friendsRefresh } = useRequest(async () => {
-    const friends = await friendsDB.friends.toArray();
-    return friends;
-  });
-
-  const updateNewFriend = useCallback((friendname?: string) => {
+  const updateNewFriend = (friendname?: string) => {
     const temp_friend: Friend = {username: "", email: "", tag: ""};
     if (friendname) {
       findFriend(friendname)
@@ -248,12 +265,9 @@ const Chatroom = () => {
           alert(error.info);
         });
     }
-    friendsDB.friends.bulkPut([temp_friend])
-      .then(() => {
-        friendsRefresh();
-      });
+    friendsDB.friends.bulkPut([temp_friend]);
     setFriendsList([...friendsList, temp_friend]);
-  }, [friendsRefresh]);
+  };
 
   useWebsocketListener(updateNewFriend, 1);
 
@@ -419,7 +433,16 @@ const Chatroom = () => {
               await conversationsDB.conversations.delete(activateConversationId);
               const conversations = await conversationsDB.conversations.toArray();
               conversations.unshift(conversation);
-              setConversationList(conversations);
+              if (conversationList[0].id !== activateConversationId) {
+                setConversationList(preConversations => {
+                  const removedConversation = preConversations.find(tempConversation => tempConversation.id === activateConversationId);
+                  const filteredConversations = preConversations.filter(tempConversation => tempConversation.id !== activateConversationId);
+                  if (removedConversation) {
+                    filteredConversations.unshift(removedConversation);
+                  }
+                  return filteredConversations;
+                });
+              }
               if (listRef.current) {
                 listRef.current.scrollTop = listRef.current.scrollHeight;
               }
@@ -448,7 +471,16 @@ const Chatroom = () => {
               await conversationsDB.conversations.delete(activateConversationId);
               const conversations = await conversationsDB.conversations.toArray();
               conversations.unshift(conversation);
-              setConversationList(conversations);
+              if (conversationList[0].id !== activateConversationId) {
+                setConversationList(preConversations => {
+                  const removedConversation = preConversations.find(tempConversation => tempConversation.id === activateConversationId);
+                  const filteredConversations = preConversations.filter(tempConversation => tempConversation.id !== activateConversationId);
+                  if (removedConversation) {
+                    filteredConversations.unshift(removedConversation);
+                  }
+                  return filteredConversations;
+                });
+              }
               if (listRef.current) {
                 listRef.current.scrollTop = listRef.current.scrollHeight;
               }
@@ -467,7 +499,6 @@ const Chatroom = () => {
     conversationsDB.sendReadConversation(activateConversationId, authUserName)
       .then((messages) => {
         if (messages) {
-          console.log(messages);
           setMessageList(messages);
           setConversationUnreadCounts({...conversationUnreadCounts, [activateConversationId]: 0});
           setTotalUnreadCounts(preTotalUnreadCounts => {
@@ -477,27 +508,28 @@ const Chatroom = () => {
       });
   };
 
-  const { refresh: conversationMessagesRefresh } = useRequest(async () => {
-    const conversationMessages = await conversationsDB.conversationMessages.toArray();
-    return conversationMessages;
-  });
-
-  const updateMessageRequest = useCallback((conversationId?: string) => {
+  const updateMessageRequest = (conversationId?: string) => {
     if (conversationId) {
       conversationsDB.pullNewMessages(parseInt(conversationId))
         .then((count) => {
           setConversationChange(prevConversationChange => {
             return !prevConversationChange;
           });
-          conversationsDB.conversationMessages.get(parseInt(conversationId)).then((conversationMessages) => {
-            if (conversationMessages) {
-              setMessageList(conversationMessages.messages);
-            }
-          });
+          if (parseInt(conversationId) === activateConversationId) {
+            conversationsDB.conversationMessages.get(parseInt(conversationId)).then((conversationMessages) => {
+              if (conversationMessages) {
+                setMessageList(conversationMessages.messages);
+              }
+            });
+          }
+          let tempCount = 0;
           setConversationUnreadCounts(prevCounts => {
             const updatedCounts = { ...prevCounts };
             if (Object.prototype.hasOwnProperty.call(updatedCounts, parseInt(conversationId))) {
-              updatedCounts[parseInt(conversationId)] += count;
+              if (updatedCounts[parseInt(conversationId)] <= count) {
+                tempCount = count - updatedCounts[parseInt(conversationId)];
+                updatedCounts[parseInt(conversationId)] = count;
+              }
             }
             else {
               updatedCounts[parseInt(conversationId)] = count;
@@ -505,12 +537,11 @@ const Chatroom = () => {
             return updatedCounts;
           });
           setTotalUnreadCounts(preTotalUnreadCounts => {
-            return preTotalUnreadCounts + count;
+            return preTotalUnreadCounts + tempCount;
           });
-          conversationMessagesRefresh();
         });
     }
-  }, [conversationMessagesRefresh]);
+  };
 
   useWebsocketListener(updateMessageRequest, 3);
 
@@ -579,17 +610,18 @@ const Chatroom = () => {
       });
   };
 
-  const updateConversationRead = useCallback((username?: string, conversationId?: string) => {
+  const updateConversationRead = (username?: string, conversationId?: string) => {
     if (username && conversationId) {
       conversationsDB.processReadConversation(parseInt(conversationId), username)
         .then((messages) => {
-          if (messages) {
-            setMessageList(messages);
+          if (activateConversationId === parseInt(conversationId)) {
+            if (messages) {
+              setMessageList(messages);
+            }
           }
-          conversationMessagesRefresh();
         });
     }
-  }, [conversationMessagesRefresh]);
+  };
 
   useWebsocketListener(updateConversationRead, 2);
 
@@ -691,6 +723,21 @@ const Chatroom = () => {
       });
   };
 
+  // Add Group
+
+  const handleAddGroupOpen = () => {
+    setAddGroupOpen(true);
+  };
+
+  const handleAddGroupClose = () => {
+    setAddGroupOpen(false);
+    setGroupMembers([]);
+  };
+
+  const addGroupMembers = (members: string[]) => {
+    setGroupMembers(members);
+  };
+
   // return components
 
   return (
@@ -720,6 +767,19 @@ const Chatroom = () => {
                 </Badge>
               </ListItemIcon>
               <ListItemText primary="Chats"></ListItemText>
+              <ListItemSecondaryAction>
+                <IconButton edge="end" aria-label="Add Group Chat" onClick={handleAddGroupOpen}>
+                  <GroupAddIcon />
+                </IconButton>
+                <AddGroupDialog
+                  open={addGroupOpen}
+                  friends={friendsList}
+                  groupName={groupName}
+                  setGroupName={setGroupName}
+                  onhandleClose={handleAddGroupClose}
+                  onhandleAddGroupMember={addGroupMembers}
+                ></AddGroupDialog>
+              </ListItemSecondaryAction>
             </ListItem>
             <ListItem button onClick={ShowFriends}>
               <ListItemIcon>

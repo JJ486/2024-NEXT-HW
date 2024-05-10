@@ -70,6 +70,7 @@ export default function ConversationList(props: any) {
                 button
                 className="listItem"
                 key={conversation.id}
+                style={{ backgroundColor: props.activateConversationId === conversation.id ? "#f0f0f0" : "white" }}
                 onClick={() => props.onhandleChangeActivateConversation(conversation.id)}
               >
                 <ListItemIcon>

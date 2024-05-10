@@ -34,3 +34,12 @@ export interface FriendRequest {
   role: "receiver" | "sender";
   timestamp: string;
 }
+
+export interface Group {
+  id: number;
+  name: string;
+  conversation: number;
+  master: string;
+  manager: string[];
+  notice: number[];
+}

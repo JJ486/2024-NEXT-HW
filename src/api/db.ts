@@ -1,5 +1,5 @@
 import Dexie from "dexie";
-import { Friend, FriendRequest, Conversation, ConversationMessage, Message } from "./types";
+import { Friend, FriendRequest, Conversation, ConversationMessage, Message, Group } from "./types";
 import { getFriends, getFriendRequests } from "./friend";
 import { getWholeConversations, getWholeMessages, getNewMessages, getConversation, readConversation, deleteMessage } from "./chat";
 
@@ -83,20 +83,24 @@ export class CachedFriends extends Dexie {
 export class CachedConversations extends Dexie {
   conversations: Dexie.Table<Conversation, number>;
   conversationMessages: Dexie.Table<ConversationMessage, number>;
+  groups: Dexie.Table<Group, number>;
 
   constructor() {
     super("CachedConversations");
     this.version(1).stores({
-      conversations: "&id, type, members, unread",
+      conversations: "&id, type, members",
       conversationMessages: "&id",
+      groups: "&id, name, conversation, master, manager, notice"
     });
     this.conversations = this.table("conversations");
     this.conversationMessages = this.table("conversationMessages");
+    this.groups = this.table("groups");
   }
 
   async clearCachedData() {
     await this.conversations.clear();
     await this.conversationMessages.clear();
+    await this.groups.clear();
   }
 
   async pullWholeConversations() {
@@ -170,6 +174,7 @@ export class CachedConversations extends Dexie {
         const res = await getConversation(conversationId);
         const data = await res.json();
         if (Number(data.code) === 0) {
+          console.log("123");
           await this.conversations.put(data.conversations[0]);
         }
         else {
