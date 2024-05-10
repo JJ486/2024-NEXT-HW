@@ -8,7 +8,7 @@ export const useWebsocketListener = (fn: (arg1?: string, args2?: string) => void
     let closed = false;
 
     const connect = () => {
-      ws = new WebSocket(`ws://backend-dev-Capybara.app.secoder.net/ws/?jwt=${jwtToken}`);
+      ws = new WebSocket(`wss://backend-dev-Capybara.app.secoder.net/ws/?jwt=${jwtToken}`);
 
       ws.onopen = () => {
         console.log("WebSocket Connected");
