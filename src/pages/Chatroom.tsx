@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Grid from "@material-ui/core/Grid";
 import Divider from "@material-ui/core/Divider";
 import Typography from "@material-ui/core/Typography";
@@ -227,13 +227,17 @@ const Chatroom = () => {
   // FriendRequest
 
   const handleClickFriendRequestOpen = async () => {
-    setFriendRequestChange(!friendRequestChange);
+    setFriendRequestChange(friendRequestChange => {
+      return !friendRequestChange;
+    });
     setFriendRequestOpen(true);
   };
 
   const handleFriendRequestClose = () => {
     setFriendRequestOpen(false);
-    setFriendRequestChange(!friendRequestChange);
+    setFriendRequestChange(friendRequestChange => {
+      return !friendRequestChange;
+    });
   };
 
   const updateFriendRequest = () => {
@@ -279,8 +283,8 @@ const Chatroom = () => {
     setTimeout(() => {
       friendsDB.friendRequests.toArray().then((friendRequests) => {
         setFriendRequestList(friendRequests);
-        const count = updateUnreadFriendRequestsCounts(friendRequests);
-        setUnreadFriendRequestsCount(count);
+        const unreadCount = updateUnreadFriendRequestsCounts(friendRequests)
+        setUnreadFriendRequestsCount(unreadCount);
       });
     }, 200);
   }, [friendRequestChange]);
@@ -340,6 +344,7 @@ const Chatroom = () => {
   };
 
   useEffect(() => {
+    console.log("friend");
     friendsDB.pullFriends();
   }, [friendChange]);
 
@@ -369,6 +374,11 @@ const Chatroom = () => {
       .then(conversation => {
         setActivateConversationId(conversation[0].id);
         setShowChats(true);
+        conversationsDB.conversationMessages.get(conversation[0].id).then((conversationMessages) => {
+          if (conversationMessages) {
+            setMessageList(conversationMessages.messages);
+          }
+        });
       })
       .catch(error => {
         alert(error.info);
@@ -532,13 +542,34 @@ const Chatroom = () => {
               }
             }
             else {
+              tempCount = count;
               updatedCounts[parseInt(conversationId)] = count;
             }
             return updatedCounts;
           });
-          setTotalUnreadCounts(preTotalUnreadCounts => {
-            return preTotalUnreadCounts + tempCount;
+          conversationsDB.conversationMessages.get(parseInt(conversationId)).then((conversationMessages) => {
+            console.log(conversationMessages);
+            if (conversationMessages) {
+              console.log(conversationMessages.messages.length);
+              if (conversationMessages.messages.length === 1) {
+                setTotalUnreadCounts(1);
+              } else {
+                setTotalUnreadCounts(preTotalUnreadCounts => {
+                  return preTotalUnreadCounts + tempCount;
+                });
+              }
+            }
           });
+          conversationsDB.conversationMessages.get(parseInt(conversationId)).then((conversationMessages) => {
+            if (conversationMessages) {
+              console.log(conversationMessages);
+              if (conversationMessages.messages.length === 1) {
+                tempCount = 1;
+              }
+            }
+          });
+          console.log(tempCount);
+          
         });
     }
   };
@@ -558,10 +589,12 @@ const Chatroom = () => {
             return !prevConversationChange;
           });
           setActivateConversationId(res.conversation.id);
-          addMessage(tempConv.id, "I passed your friend verification request. Now we can start chatting.", -1)
+          setTimeout(() => {
+            addMessage(tempConv.id, "I passed your friend verification request. Now we can start chatting.", -1)
             .then((res) => res.json())
             .then((res) => {
               if (Number(res.code) === 0) {
+                console.log("aaa");
                 const newMessage: Message = res.message;
                 addNewMessage(newMessage);
               }
@@ -572,6 +605,7 @@ const Chatroom = () => {
             .catch((error) => {
               alert(error.info);
             });
+          }, 500);
         }
         else {
           alert(res.info);

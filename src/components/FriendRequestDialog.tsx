@@ -62,7 +62,6 @@ export default function FriendRequestDialog(props: any) {
                               if (Number(res.code) === 0) {
                                 alert("You have accepted the friend request.");
                                 props.onSetFriendChange(!props.friendChange);
-                                props.onSetFriendRequestChange(!props.friendRequestChange);
                                 props.onhandleFriendRequestClose();
                                 props.onhandleNewPrivateConversation(request.username);
                               }

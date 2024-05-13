@@ -53,8 +53,10 @@ export class CachedFriends extends Dexie {
       const data = await res.json();
       if (Number(data.code) === 0) {
         newRequests = data.friends;
+        console.log(data.friends);
         const count = updateUnreadFriendRequestsCounts(newRequests);
         unreadCount = count;
+        console.log(count);
         this.friendRequests.clear();
         this.friendRequests.bulkPut(data.friends);
       }
@@ -168,6 +170,7 @@ export class CachedConversations extends Dexie {
   }
 
   async pullNewMessages(conversationId: number) {
+    console.log("new pull");
     const conversationExists = await this.conversations.get(conversationId);
     if (!conversationExists) {
       try {
