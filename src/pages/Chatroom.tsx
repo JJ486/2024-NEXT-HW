@@ -283,7 +283,7 @@ const Chatroom = () => {
     setTimeout(() => {
       friendsDB.friendRequests.toArray().then((friendRequests) => {
         setFriendRequestList(friendRequests);
-        const unreadCount = updateUnreadFriendRequestsCounts(friendRequests)
+        const unreadCount = updateUnreadFriendRequestsCounts(friendRequests);
         setUnreadFriendRequestsCount(unreadCount);
       });
     }, 200);
@@ -344,7 +344,6 @@ const Chatroom = () => {
   };
 
   useEffect(() => {
-    console.log("friend");
     friendsDB.pullFriends();
   }, [friendChange]);
 
@@ -548,12 +547,11 @@ const Chatroom = () => {
             return updatedCounts;
           });
           conversationsDB.conversationMessages.get(parseInt(conversationId)).then((conversationMessages) => {
-            console.log(conversationMessages);
             if (conversationMessages) {
-              console.log(conversationMessages.messages.length);
               if (conversationMessages.messages.length === 1) {
                 setTotalUnreadCounts(1);
-              } else {
+              }
+              else {
                 setTotalUnreadCounts(preTotalUnreadCounts => {
                   return preTotalUnreadCounts + tempCount;
                 });
@@ -562,14 +560,11 @@ const Chatroom = () => {
           });
           conversationsDB.conversationMessages.get(parseInt(conversationId)).then((conversationMessages) => {
             if (conversationMessages) {
-              console.log(conversationMessages);
               if (conversationMessages.messages.length === 1) {
                 tempCount = 1;
               }
             }
           });
-          console.log(tempCount);
-          
         });
     }
   };
@@ -594,7 +589,6 @@ const Chatroom = () => {
             .then((res) => res.json())
             .then((res) => {
               if (Number(res.code) === 0) {
-                console.log("aaa");
                 const newMessage: Message = res.message;
                 addNewMessage(newMessage);
               }
