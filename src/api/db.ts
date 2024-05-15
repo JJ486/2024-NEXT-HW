@@ -2,6 +2,7 @@ import Dexie from "dexie";
 import { Friend, FriendRequest, Conversation, ConversationMessage, Message, Group } from "./types";
 import { getFriends, getFriendRequests } from "./friend";
 import { getWholeConversations, getWholeMessages, getNewMessages, getConversation, readConversation, deleteMessage } from "./chat";
+import { getWholeGroups, addManager, deleteManager, changeMaster, removeMember } from "../api/group";
 
 export function updateUnreadFriendRequestsCounts(friendRequests: FriendRequest[]) {
   const newRequests = friendRequests.filter((request) => request.status === "Pending");
@@ -345,6 +346,115 @@ export class CachedConversations extends Dexie {
       conversationMessage.messages = filteredMessages;
       await this.conversationMessages.put(conversationMessage);
       return filteredMessages;
+    }
+  }
+
+  async addNewGroup(group: Group) {
+    await this.groups.put(group);
+  }
+
+  async getGroups() {
+    const groups = await this.groups.toArray();
+    return groups;
+  }
+
+  async pullGroups() {
+    try {
+      const res = await getWholeGroups();
+      const data = await res.json();
+      if (Number(data.code) === 0) {
+        this.groups.clear();
+        this.groups.bulkPut(data.groups);
+      }
+      else {
+        alert(data.info);
+      }
+    }
+    catch (error: any) {
+      alert(error.info);
+    }
+  }
+
+  async addNewManager(groupId: number, manager: string) {
+    try {
+      const res = await addManager(groupId, manager);
+      const data = await res.json();
+      if (Number(data.code) === 0) {
+        const updatedGroup = await this.groups.get(groupId);
+        if (updatedGroup) {
+          updatedGroup.manager.push(manager);
+          await this.groups.put(updatedGroup);
+        }
+      }
+      else {
+        alert(data.info);
+      }
+    }
+    catch (error: any) {
+      alert(error.info);
+    }
+  }
+
+  async deleteManager(groupId: number, manager: string) {
+    try {
+      const res = await deleteManager(groupId, manager);
+      const data = await res.json();
+      if (Number(data.code) === 0) {
+        const updatedGroup = await this.groups.get(groupId);
+        if (updatedGroup) {
+          updatedGroup.manager = updatedGroup.manager.filter((m) => m !== manager);
+          await this.groups.put(updatedGroup);
+        }
+      }
+      else {
+        alert(data.info);
+      }
+    }
+    catch (error: any) {
+      alert(error.info);
+    }
+  }
+
+  async changeMaster(groupId: number, master: string) {
+    try {
+      const res = await changeMaster(groupId, master);
+      const data = await res.json();
+      if (Number(data.code) === 0) {
+        const updatedGroup = await this.groups.get(groupId);
+        if (updatedGroup) {
+          updatedGroup.master = master;
+          await this.groups.put(updatedGroup);
+        }
+      }
+      else {
+        alert(data.info);
+      }
+    }
+    catch (error: any) {
+      alert(error.info);
+    }
+  }
+
+  async removeMember(groupId: number, member: string) {
+    try {
+      const res = await removeMember(groupId, member);
+      const data = await res.json();
+      if (Number(data.code) === 0) {
+        const group = await this.groups.get(groupId);
+        if (group) {
+          const updatedConversation = await this.conversations.get(group.conversation);
+          if (updatedConversation) {
+            updatedConversation.members = updatedConversation.members.filter((m) => m !== member);
+            await this.conversations.put(updatedConversation);
+          }
+        }
+      }
+      else {
+        alert(data.info);
+      }
+    }
+    catch (error: any) {
+      alert(error.info);
     }
   }
 }

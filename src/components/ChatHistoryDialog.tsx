@@ -14,7 +14,6 @@ import MenuItem from "@material-ui/core/MenuItem";
 import { friendsDB, conversationsDB } from "../api/db";
 import { Message, Friend } from "../api/types";
 
-
 export default function ChatHistoryDialog(props: any) {
   const [anchorEls, setAnchorEls] = useState<{ [key: number]: HTMLElement | null }>({});
   const [mousePosition, setMousePosition] = useState<{ x: number, y: number }>({ x: 0, y: 0 });

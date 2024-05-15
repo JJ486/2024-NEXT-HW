@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import Grid from "@material-ui/core/Grid";
 import Divider from "@material-ui/core/Divider";
 import Typography from "@material-ui/core/Typography";
@@ -14,6 +14,7 @@ import AddIcon from "@mui/icons-material/Add";
 import MailIcon from "@mui/icons-material/Mail";
 import FeedIcon from "@mui/icons-material/Feed";
 import CancelScheduleSendIcon from "@mui/icons-material/CancelScheduleSend";
+import MoreHorizIcon from "@mui/icons-material/MoreHoriz";
 import Fab from "@material-ui/core/Fab";
 import SendIcon from "@mui/icons-material/Send";
 import ChatIcon from "@mui/icons-material/Chat";
@@ -31,7 +32,6 @@ import AddFriendDialog from "../components/AddFriendDialog";
 import { Conversation, Friend, FriendRequest, Message } from "../api/types";
 import FriendList from "../components/FriendList";
 import { friendsDB, updateUnreadFriendRequestsCounts, conversationsDB } from "../api/db";
-import { useWebsocketListener } from "../api/websocket";
 import FriendRequestDialog from "../components/FriendRequestDialog";
 import { findFriend, addFriend, deleteFriend, addFriendTag, getTagFriends } from "../api/friend";
 import CustomInput from "../components/CustomInput";
@@ -41,6 +41,8 @@ import MessageBubble from "../components/MessageBubble";
 import ConversationList from "../components/ConversationList";
 import ChatHistoryDialog from "../components/ChatHistoryDialog";
 import AddGroupDialog from "../components/AddGroupDialog";
+import { addGroup } from "../api/group";
+import GroupInfoDialog from "../components/GroupInfoDialog";
 
 const Chatroom = () => {
   const [showChats, setShowChats] = useState(true);
@@ -76,14 +78,59 @@ const Chatroom = () => {
   const [totalUnreadCounts, setTotalUnreadCounts] = useState<number>(0);
   const [initialRender, setInitialRender] = useState(true);
   const [addGroupOpen, setAddGroupOpen] = useState(false);
-  const [groupMembers, setGroupMembers] = useState<string[]>([]);
-  const [groupName, setGroupName] = useState("");
   const [authEmail, setAuthEmail] = useState("");
+  const [activateGroupId, setActivateGroupId] = useState<number>(-1);
+  const [conversationTitle, setConversationTitle] = useState<string>("");
+  const [groupChange, setGroupChange] = useState(false);
+  const [showGroupInfo, setShowGroupInfo] = useState(false);
 
   const router = useRouter();
   const dispatch = useDispatch();
   const authUserName = useSelector((state: RootState) => state.auth.name);
   const listRef = useRef<HTMLUListElement>(null);
+  const wsRef = useRef<WebSocket | null>(null);
+  const jwtToken = Cookies.get("jwt_token");
+
+  // websocket
+
+  useEffect(() => {
+    if (!wsRef.current) {
+      wsRef.current = new WebSocket(`wss://backend-dev-Capybara.app.secoder.net/ws/?jwt=${jwtToken}`);
+      wsRef.current.onopen = () => {
+        console.log("WebSocket Connected");
+      };
+    }
+    else {
+      wsRef.current.onmessage = async (event) => {
+        console.log(event.data);
+        if (event.data === "new friend request") {
+          updateFriendRequest();
+        }
+        else if (event.data.substring(0, 16) === "new friend added") {
+          const friendname = event.data.substring(17);
+          updateNewFriend(friendname);
+        }
+        else if (event.data.substring(0, 21) === "message has been read") {
+          const parts = event.data.split(" ");
+          const username = parts[4];
+          const conversationId = parts[5];
+          updateConversationRead(username, conversationId);
+        }
+        else if (event.data.substring(0, 27) === "new message in conversation") {
+          const conversationId = event.data.substring(28);
+          updateMessageRequest(conversationId);
+        }
+        // else if (event.data === "new group request") {
+
+        // }
+        // else if (event.data === "new group invitation") {
+
+        // }
+      };
+    }
+  });
+
+  // auth
 
   useEffect(() => {
     const cookie_jwtToken = Cookies.get("jwt_token");
@@ -247,8 +294,6 @@ const Chatroom = () => {
       });
   };
 
-  useWebsocketListener(updateFriendRequest, 0);
-
   const updateNewFriend = (friendname?: string) => {
     const temp_friend: Friend = {username: "", email: "", tag: ""};
     if (friendname) {
@@ -273,20 +318,15 @@ const Chatroom = () => {
     setFriendsList([...friendsList, temp_friend]);
   };
 
-  useWebsocketListener(updateNewFriend, 1);
-
   useEffect(() => {
-    friendsDB.pullFriendRequests();
-  }, [friendRequestChange]);
-
-  useEffect(() => {
-    setTimeout(() => {
-      friendsDB.friendRequests.toArray().then((friendRequests) => {
-        setFriendRequestList(friendRequests);
-        const unreadCount = updateUnreadFriendRequestsCounts(friendRequests);
-        setUnreadFriendRequestsCount(unreadCount);
+    friendsDB.pullFriendRequests()
+      .then(() => {
+        friendsDB.friendRequests.toArray().then((friendRequests) => {
+          setFriendRequestList(friendRequests);
+          const unreadCount = updateUnreadFriendRequestsCounts(friendRequests);
+          setUnreadFriendRequestsCount(unreadCount);
+        });
       });
-    }, 200);
   }, [friendRequestChange]);
 
   // FriendList
@@ -344,22 +384,19 @@ const Chatroom = () => {
   };
 
   useEffect(() => {
-    friendsDB.pullFriends();
-  }, [friendChange]);
-
-  useEffect(() => {
-    setTimeout(() => {
-      friendsDB.friends.toArray().then((friends) => {
-        setFriendsList(friends);
-        const friendTags: string[] = [];
-        friends.forEach((friend) => {
-          if (friend.tag !== "" && !friendTags.includes(friend.tag)) {
-            friendTags.push(friend.tag);
-          }
+    friendsDB.pullFriends()
+      .then(() => {
+        friendsDB.friends.toArray().then((friends) => {
+          setFriendsList(friends);
+          const friendTags: string[] = [];
+          friends.forEach((friend) => {
+            if (friend.tag !== "" && !friendTags.includes(friend.tag)) {
+              friendTags.push(friend.tag);
+            }
+          });
+          setTags(friendTags);
         });
-        setTags(friendTags);
       });
-    }, 200);
   }, [friendChange]);
 
   const handleFriendtoChat = (friendname: string) => {
@@ -372,6 +409,7 @@ const Chatroom = () => {
       .toArray()
       .then(conversation => {
         setActivateConversationId(conversation[0].id);
+        setActivateGroupId(-1);
         setShowChats(true);
         conversationsDB.conversationMessages.get(conversation[0].id).then((conversationMessages) => {
           if (conversationMessages) {
@@ -506,15 +544,15 @@ const Chatroom = () => {
       }
     }
     conversationsDB.sendReadConversation(activateConversationId, authUserName)
-      .then((messages) => {
-        if (messages) {
-          setMessageList(messages);
-          setConversationUnreadCounts({...conversationUnreadCounts, [activateConversationId]: 0});
-          setTotalUnreadCounts(preTotalUnreadCounts => {
-            return preTotalUnreadCounts - conversationUnreadCounts[activateConversationId];
-          });
-        }
-      });
+    .then((messages) => {
+      if (messages) {
+        setMessageList(messages);
+        setConversationUnreadCounts({...conversationUnreadCounts, [activateConversationId]: 0});
+        setTotalUnreadCounts(preTotalUnreadCounts => {
+          return preTotalUnreadCounts - conversationUnreadCounts[activateConversationId];
+        });
+      }
+    });
   };
 
   const updateMessageRequest = (conversationId?: string) => {
@@ -523,6 +561,9 @@ const Chatroom = () => {
         .then((count) => {
           setConversationChange(prevConversationChange => {
             return !prevConversationChange;
+          });
+          setGroupChange(prevGroupChange => {
+            return !prevGroupChange;
           });
           if (parseInt(conversationId) === activateConversationId) {
             conversationsDB.conversationMessages.get(parseInt(conversationId)).then((conversationMessages) => {
@@ -569,8 +610,6 @@ const Chatroom = () => {
     }
   };
 
-  useWebsocketListener(updateMessageRequest, 3);
-
   // addNewPrivateConversation
 
   const handleNewPrivateConversation = (username: string) => {
@@ -584,22 +623,21 @@ const Chatroom = () => {
             return !prevConversationChange;
           });
           setActivateConversationId(res.conversation.id);
-          setTimeout(() => {
-            addMessage(tempConv.id, "I passed your friend verification request. Now we can start chatting.", -1)
-            .then((res) => res.json())
-            .then((res) => {
-              if (Number(res.code) === 0) {
-                const newMessage: Message = res.message;
-                addNewMessage(newMessage);
-              }
-              else {
-                alert(res.info);
-              }
-            })
-            .catch((error) => {
-              alert(error.info);
-            });
-          }, 500);
+          setActivateGroupId(-1);
+          addMessage(tempConv.id, "I passed your friend verification request. Now we can start chatting.", -1)
+          .then((res) => res.json())
+          .then((res) => {
+            if (Number(res.code) === 0) {
+              const newMessage: Message = res.message;
+              addNewMessage(newMessage);
+            }
+            else {
+              alert(res.info);
+            }
+          })
+          .catch((error) => {
+            alert(error.info);
+          });
         }
         else {
           alert(res.info);
@@ -612,13 +650,25 @@ const Chatroom = () => {
 
   // conversationList
 
-  const getActivateConversationTitle = (conversationId: number) => {
-    const members = conversationList.filter(conversation => conversation.id === conversationId).at(0)?.members;
-    if (members) {
-      for (const member of members) {
-        if (member !== authUserName) {
-          return member;
+  const getActivateConversationTitle = (conversationId: number, groupId: number) => {
+    const conversation = conversationList.filter(conversation => conversation.id === conversationId).at(0);
+    if (conversation) {
+      if (conversation.type === 0) {
+        const members = conversation.members;
+        for (const member of members) {
+          if (member !== authUserName) {
+            setConversationTitle(member);
+          }
         }
+      }
+      else {
+        conversationsDB.getGroups()
+          .then((groups) => {
+            const group = groups.find(group => group.id === groupId);
+            if (group) {
+              setConversationTitle(group.name);
+            }
+          });
       }
     }
   };
@@ -629,8 +679,32 @@ const Chatroom = () => {
         if (messages) {
           setMessageList(messages);
         }
-        setActivateConversationType(getConversationType(conversationId));
+        getConversation(conversationId)
+          .then((res) => res.json())
+          .then((res) => {
+            if (Number(res.code) === 0) {
+              console.log(res.conversations[0].type);
+              setActivateConversationType(res.conversations[0].type);
+            }
+            else {
+              alert(res.info);
+            }
+          })
+          .catch((error) => {
+            alert(error.info);
+          });
         setActivateConversationId(conversationId);
+        conversationsDB.groups.toArray().then((groups) => {
+          const group = groups.find((group) => group.conversation === conversationId);
+          if (group) {
+            setActivateGroupId(group.id);
+            getActivateConversationTitle(conversationId, group.id);
+          }
+          else {
+            setActivateGroupId(-1);
+            getActivateConversationTitle(conversationId, -1);
+          }
+        });
         setConversationUnreadCounts({...conversationUnreadCounts, [conversationId]: 0});
         setTotalUnreadCounts(preTotalUnreadCounts => {
           return preTotalUnreadCounts - conversationUnreadCounts[conversationId];
@@ -650,8 +724,6 @@ const Chatroom = () => {
         });
     }
   };
-
-  useWebsocketListener(updateConversationRead, 2);
 
   useEffect(() => {
     if (!initialRender) {
@@ -703,24 +775,6 @@ const Chatroom = () => {
     });
   }, []);
 
-  const getConversationType = (id: number) => {
-    let type = 0;
-    getConversation(id)
-      .then((res) => res.json())
-      .then((res) => {
-        if (Number(res.code) === 0) {
-          type = res.conversations.type;
-        }
-        else {
-          alert(res.info);
-        }
-      })
-      .catch((error) => {
-        alert(error.info);
-      });
-    return type;
-  };
-
   // Reply Message
 
   const handleReplyMessage = (message: Message) =>{
@@ -753,17 +807,64 @@ const Chatroom = () => {
 
   // Add Group
 
+  useEffect(() => {
+    conversationsDB.pullGroups();
+  }, [groupChange]);
+
   const handleAddGroupOpen = () => {
     setAddGroupOpen(true);
   };
 
   const handleAddGroupClose = () => {
     setAddGroupOpen(false);
-    setGroupMembers([]);
   };
 
-  const addGroupMembers = (members: string[]) => {
-    setGroupMembers(members);
+  const handleAddGroup = (groupName: string, members: string[]) => {
+    addGroup(groupName, members)
+      .then((res) => res.json())
+      .then((res) => {
+        if (Number(res.code) === 0) {
+          conversationsDB.addNewGroup(res.group);
+          conversationsDB.addNewConversations(res.conversation)
+            .then(() => {
+              setConversationChange(prevConversationChange => {
+                return !prevConversationChange;
+              });
+              setActivateConversationId(res.group.conversation);
+              setActivateGroupId(res.group.id);
+            });
+          addMessage(res.conversation.id, `Welcome to Group ${groupName}.`, -1)
+            .then((res) => res.json())
+            .then((res) => {
+              if (Number(res.code) === 0) {
+                const newMessage: Message = res.message;
+                addNewMessage(newMessage);
+              }
+              else {
+                alert(res.info);
+              }
+            })
+            .catch((error) => {
+              alert(error.info);
+            });
+        }
+        else {
+          alert(res.info);
+        }
+      })
+      .catch((error) => {
+        alert(error.info);
+      });
+  };
+
+  // Group Info
+
+  const handleShowGroupInfo = () => {
+    setShowGroupInfo(true);
+  };
+
+  const handleGroupInfoClose = () => {
+    setShowGroupInfo(false);
   };
 
   // return components
@@ -802,10 +903,9 @@ const Chatroom = () => {
                 <AddGroupDialog
                   open={addGroupOpen}
                   friends={friendsList}
-                  groupName={groupName}
-                  setGroupName={setGroupName}
                   onhandleClose={handleAddGroupClose}
-                  onhandleAddGroupMember={addGroupMembers}
+                  onhandleAddGroup={handleAddGroup}
+                  onSetFriendRequestChange={setFriendRequestChange}
                 ></AddGroupDialog>
               </ListItemSecondaryAction>
             </ListItem>
@@ -897,9 +997,27 @@ const Chatroom = () => {
           ) : (
             <Grid item xs={9}>
               <Grid container style={{ height: "10vh", display: "flex", alignItems: "center" }}>
-                <Typography variant="h5" style={{ marginLeft: "25px"}}>
-                  {getActivateConversationTitle(activateConversationId)}
-                </Typography>
+                <Grid item xs={11}>
+                  <Typography variant="h5" style={{ marginLeft: "25px" }}>
+                    {conversationTitle}
+                  </Typography>
+                </Grid>
+                {activateConversationType === 1 && (
+                  <Grid item xs={1} style={{ display: "flex", justifyContent: "flex-end", paddingRight: "10px" }}>
+                    <IconButton aria-label="Group Info" onClick={handleShowGroupInfo}>
+                      <MoreHorizIcon style={{ fontSize: "2rem" }}/>
+                    </IconButton>
+                    <GroupInfoDialog
+                      open={showGroupInfo}
+                      onhandleClose={handleGroupInfoClose}
+                      authUserName={authUserName}
+                      authEmail={authEmail}
+                      activateConversationId={activateConversationId}
+                      activateGroupId={activateGroupId}
+                      onSetFriendRequestChange={setFriendRequestChange}
+                    />
+                  </Grid>
+                )}
               </Grid>
               <Divider/>
               <List ref={listRef} style={{ borderRight: "1px solid #e0e0e0", height: "72.4vh", overflowY: "auto"}}>
@@ -914,7 +1032,6 @@ const Chatroom = () => {
                   onhandleReplyMessage={handleReplyMessage}
                   onhandleDeleteMessage={deleteMessage}
                 ></MessageBubble>
-                {/* Display messages based on selected chat/friend */}
               </List>
               <Divider />
               <Grid container style={{ borderRight: "1px solid #e0e0e0", padding: "10px"}}>
@@ -952,12 +1069,12 @@ const Chatroom = () => {
                       </Grid>
                     </Grid>
                   </>
-              ): (null)}
-              <Grid xs={1} container justifyContent="center" alignItems="center">
-                <Fab tabIndex={0} style={{ width: "54px", height: "54px" }} color="primary" aria-label="send" onClick={handleSend}>
-                  <SendIcon />
-                </Fab>
-              </Grid>
+                ): (null)}
+                <Grid xs={1} container justifyContent="center" alignItems="center">
+                  <Fab tabIndex={0} style={{ width: "54px", height: "54px" }} color="primary" aria-label="send" onClick={handleSend}>
+                    <SendIcon />
+                  </Fab>
+                </Grid>
               </Grid>
             </Grid>
           )}

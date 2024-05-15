@@ -49,7 +49,16 @@ export default function AddFriendDialog(props: any) {
         <Button style={{ textTransform: "none", fontSize: "1.1rem" }} onClick={props.onhandleFindFriend} color="primary">
           Find
         </Button>
-        <Button style={{ textTransform: "none", fontSize: "1.1rem" }} onClick={props.onhandleSubmitFriendRequest} color="primary">
+        <Button
+          style={{ textTransform: "none", fontSize: "1.1rem" }}
+          onClick={() => {
+            props.onhandleSubmitFriendRequest();
+            props.onSetFriendRequestChange((preFriendRequestChange: boolean) => {
+              return !preFriendRequestChange;
+            });
+          }}
+          color="primary"
+        >
           Submit
         </Button>
       </DialogActions>

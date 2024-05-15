@@ -1,8 +1,6 @@
 import React, { useEffect, useState } from "react";
 import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
-import DialogContent from "@mui/material/DialogContent";
-import DialogContentText from "@mui/material/DialogContentText";
 import DialogTitle from "@mui/material/DialogTitle";
 import Button from "@mui/material/Button";
 import Grid from "@material-ui/core/Grid";
@@ -14,6 +12,7 @@ import CustomInput from "./CustomInput";
 export default function AddGroupDialog(props: any) {
   const [avatars, setAvatars] = useState<{ [key: string]: string }>({});
   const [members, setMembers] = useState<string[]>([]);
+  const [groupName, setGroupName] = useState<string>("");
 
   useEffect(() => {
     const fetchAvatars = async () => {
@@ -43,17 +42,18 @@ export default function AddGroupDialog(props: any) {
       onClose={() => {
         props.onhandleClose();
         setMembers([]);
+        setGroupName("");
       }}
       PaperProps={{ style: { width: "500px" } }}
     >
       <DialogTitle>Add Group Chat</DialogTitle>
-      <Grid style={{ height: "20vh", marginLeft: "20px", marginRight: "20px" }}>
+      <Grid style={{ height: "10vh", marginLeft: "20px", marginRight: "20px" }}>
         <CustomInput
           label="Enter Group Name Here"
           id="groupName"
           name="groupName"
-          value={props.groupName}
-          onChange={(e: React.ChangeEvent<HTMLInputElement>) => props.setGroupName(e.target.value)}
+          value={groupName}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setGroupName(e.target.value)}
           autoFocus
         ></CustomInput>
       </Grid>
@@ -86,10 +86,20 @@ export default function AddGroupDialog(props: any) {
       <Button style={{ textTransform: "none", fontSize: "1.1rem" }} onClick={() => {
           props.onhandleClose();
           setMembers([]);
+          setGroupName("");
         }}>
         Cancel
       </Button>
-      <Button style={{ textTransform: "none", fontSize: "1.1rem" }} onClick={props.onhandleAddGroupMember(members)} color="primary">
+      <Button
+        style={{ textTransform: "none", fontSize: "1.1rem" }}
+        onClick={() => {
+          props.onhandleAddGroup(groupName, members);
+          props.onhandleClose();
+          setMembers([]);
+          setGroupName("");
+        }}
+        color="primary"
+      >
         Submit
       </Button>
       </DialogActions>
