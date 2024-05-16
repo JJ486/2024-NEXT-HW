@@ -43,3 +43,11 @@ export interface Group {
   manager: string[];
   notice: number[];
 }
+
+export interface Notice {
+  id: number;
+  conversation: number;
+  sender: string;
+  content: string;
+  timestamp: string;
+}

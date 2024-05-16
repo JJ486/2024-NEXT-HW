@@ -683,7 +683,6 @@ const Chatroom = () => {
           .then((res) => res.json())
           .then((res) => {
             if (Number(res.code) === 0) {
-              console.log(res.conversations[0].type);
               setActivateConversationType(res.conversations[0].type);
             }
             else {
@@ -697,6 +696,7 @@ const Chatroom = () => {
         conversationsDB.groups.toArray().then((groups) => {
           const group = groups.find((group) => group.conversation === conversationId);
           if (group) {
+            console.log(group);
             setActivateGroupId(group.id);
             getActivateConversationTitle(conversationId, group.id);
           }

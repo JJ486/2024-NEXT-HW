@@ -104,3 +104,34 @@ export async function removeMember(groupId: number, member: string) {
   });
   return response;
 }
+
+export async function getGroupNotice(groupId: number) {
+  const header = new Headers();
+  const jwtToken = Cookies.get("jwt_token");
+  if (jwtToken) {
+    header.append("authorization", jwtToken);
+  }
+  const response = fetch(`/api/chat/group_notice?group=${groupId}`, {
+    method: "GET",
+    headers: header,
+  });
+  return response;
+}
+
+export async function addGroupNotice(groupId: number, content: string) {
+  const header = new Headers();
+  const jwtToken = Cookies.get("jwt_token");
+  if (jwtToken) {
+    header.append("authorization", jwtToken);
+  }
+  const requestBody = {
+    group: groupId,
+    content,
+  };
+  const response = fetch(`/api/chat/group_notice`, {
+    method: "POST",
+    headers: header,
+    body: JSON.stringify(requestBody),
+  });
+  return response;
+}

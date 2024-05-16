@@ -4,8 +4,12 @@ import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
 import md5 from "md5";
+import List from "@material-ui/core/List";
+import ListItem from "@material-ui/core/ListItem";
+import ListItemText from "@material-ui/core/ListItemText";
 import IconButton from "@material-ui/core/IconButton";
 import CloseIcon from "@mui/icons-material/Close";
+import AddIcon from "@mui/icons-material/Add";
 import Grid from "@material-ui/core/Grid";
 import Typography from "@material-ui/core/Typography";
 import Button from "@mui/material/Button";
@@ -17,6 +21,8 @@ import Menu from "@material-ui/core/Menu";
 import { Box } from "@mui/material";
 import SupervisedUserCircleIcon from "@mui/icons-material/SupervisedUserCircle";
 import CustomInput from "./CustomInput";
+import { getGroupNotice, addGroupNotice } from "../api/group";
+import { Notice } from "../api/types";
 
 export default function GroupInfoDialog(props: any) {
   const [avatars, setAvatars] = useState<{ [key: string]: string }>({});
@@ -32,6 +38,9 @@ export default function GroupInfoDialog(props: any) {
   const [newManager, setNewManager] = useState<string>("");
   const [deleteManager, setDeleteManager] = useState<string>("");
   const [removeMember, setRemoveMember] = useState<string>("");
+  const [groupNotice, setGroupNotice] = useState<Notice[]>([]);
+  const [newNotice, setNewNotice] = useState<string>("");
+  const [showAddNotice, setShowAddNotice] = useState<boolean>(false);
 
   const handleSettingsOpen = () => {
     setShowSettings(true);
@@ -39,6 +48,14 @@ export default function GroupInfoDialog(props: any) {
 
   const handleSettingsClose = () => {
     setShowSettings(false);
+  };
+
+  const handleAddNoticeOpen = () => {
+    setShowAddNotice(true);
+  };
+
+  const handleAddNoticeClose = () => {
+    setShowAddNotice(false);
   };
 
   const getHash = async (username: string) => {
@@ -111,6 +128,17 @@ export default function GroupInfoDialog(props: any) {
     };
     fetchAvatars();
   }, [props.activateConversationId]);
+
+  useEffect(() => {
+    getGroupNotice(props.activateGroupId)
+      .then((res) => res.json())
+      .then((res) => {
+        if (Number(res.code) === 0) {
+          console.log(res.notices);
+          setGroupNotice(res.notices);
+        }
+      });
+  }, [props.activateGroupId]);
 
   const handleMenuOpen = (event: React.MouseEvent<HTMLButtonElement>) => {
     setAnchorEl(event.currentTarget);
@@ -236,6 +264,22 @@ export default function GroupInfoDialog(props: any) {
         });
       }
     }
+  };
+
+  const addNewGroupNotice = (groupId: number, notice: string) => {
+    addGroupNotice(groupId, notice)
+      .then((res) => res.json())
+      .then((res) => {
+        if (Number(res.code) === 0) {
+          alert("Group notice added.");
+          setGroupNotice(preGroupNotice => {
+            return [...preGroupNotice, res.notice];
+          });
+        }
+      })
+      .catch((error) => {
+        alert(error.info);
+      });
   };
 
   return (
@@ -480,8 +524,88 @@ export default function GroupInfoDialog(props: any) {
             <Divider />
           </Grid>
           <Grid item xs={12}>
-            <Typography variant="h6">Announcements</Typography>
-            <Typography>Announcements</Typography>
+            <Grid container alignItems="center" justifyContent="space-between">
+              <Grid item xs={11}>
+                <Typography variant="h6">Announcements</Typography>
+              </Grid>
+              { (Object.keys(master)[0] === props.authUserName || Object.keys(managers).includes(props.authUserName)) && (
+                <Grid item xs={1}>
+                  <IconButton aria-label="AddGroupNotice" onClick={handleAddNoticeOpen} style={{ right: 10 }}>
+                    <AddIcon />
+                  </IconButton>
+                  <Dialog
+                    open={showAddNotice}
+                    onClose={handleAddNoticeClose}
+                    PaperProps={{
+                      style: {
+                        width: "500px",
+                        maxHeight: "90vh",
+                        overflowY: "auto"
+                      }
+                    }}
+                  >
+                    <DialogTitle>
+                      Add Group Notice
+                      <IconButton aria-label="close" onClick={handleAddNoticeClose} style={{ position: "absolute", top: 10, right: 10 }}>
+                        <CloseIcon />
+                      </IconButton>
+                    </DialogTitle>
+                    <Divider />
+                    <DialogContent sx={{ overflowY: "visible" }}>
+                      <CustomInput
+                        label="Tpye Group Notice"
+                        id="GroupNotice"
+                        name="GroupNotice"
+                        value={newNotice}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewNotice(e.target.value)}
+                        autoFocus
+                      ></CustomInput>
+                      <DialogActions>
+                        <Button
+                          style={{ textTransform: "none", fontSize: "1.1rem" }}
+                          onClick={() => {
+                            console.log(props.activateGroupId);
+                            addNewGroupNotice(props.activateGroupId, newNotice);
+                            setNewNotice("");
+                            handleAddNoticeClose();
+                          }}
+                        >
+                          Submit
+                        </Button>
+                      </DialogActions>
+                    </DialogContent>
+                  </Dialog>
+                </Grid>
+              )}
+              <List>
+                {groupNotice.map((notice) => (
+                  <ListItem key={notice.id}>
+                    <Grid container style={{width: "500px"}}>
+                      <Grid item xs={10}>
+                        <ListItemText
+                          primary={notice.content}
+                        />
+                      </Grid>
+                      <Grid item xs={2}>
+                      <ListItemText
+                          primary={notice.sender}
+                          secondary={
+                            (() => {
+                              const date = new Date(notice.timestamp);
+                              const formattedDate = `${date.getMonth() + 1}/${date.getDate()} ${date.getHours()}:${date.getMinutes() < 10 ? "0" : ""}${date.getMinutes()}`;
+                              return formattedDate;
+                            })()
+                          }
+                          primaryTypographyProps={{ style: { textAlign: "right" } }}
+                          secondaryTypographyProps={{ style: { textAlign: "right" } }}
+                        />
+                      </Grid>
+                    </Grid>
+                    
+                  </ListItem>
+                ))}
+              </List>
+            </Grid>
           </Grid>
           <Grid item xs={12}>
             <Divider />
