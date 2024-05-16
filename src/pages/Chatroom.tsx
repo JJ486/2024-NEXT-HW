@@ -29,9 +29,9 @@ import { useRouter } from "next/router";
 import { setName, setToken, } from "../redux/auth";
 import { useDispatch } from "react-redux";
 import AddFriendDialog from "../components/AddFriendDialog";
-import { Conversation, Friend, FriendRequest, Message } from "../api/types";
+import { Conversation, Friend, FriendRequest, Message, GroupRequest } from "../api/types";
 import FriendList from "../components/FriendList";
-import { friendsDB, updateUnreadFriendRequestsCounts, conversationsDB } from "../api/db";
+import { friendsDB, updateUnreadFriendRequestsCounts, conversationsDB, updateUnreadGroupRequestsCounts } from "../api/db";
 import FriendRequestDialog from "../components/FriendRequestDialog";
 import { findFriend, addFriend, deleteFriend, addFriendTag, getTagFriends } from "../api/friend";
 import CustomInput from "../components/CustomInput";
@@ -43,6 +43,7 @@ import ChatHistoryDialog from "../components/ChatHistoryDialog";
 import AddGroupDialog from "../components/AddGroupDialog";
 import { addGroup } from "../api/group";
 import GroupInfoDialog from "../components/GroupInfoDialog";
+import GroupRequestDialog from "../components/GroupRequestDialog";
 
 const Chatroom = () => {
   const [showChats, setShowChats] = useState(true);
@@ -83,6 +84,12 @@ const Chatroom = () => {
   const [conversationTitle, setConversationTitle] = useState<string>("");
   const [groupChange, setGroupChange] = useState(false);
   const [showGroupInfo, setShowGroupInfo] = useState(false);
+  const [groupNoticeChange, setGroupNoticeChange] = useState(false);
+  const [showGroupRequest, setShowGroupRequest] = useState(false);
+  const [unreadGroupRequestsCount, setUnreadGroupRequestsCount] = useState(0);
+  const [groupRequestsList, setGroupRequestsList] = useState<GroupRequest[]>([]);
+  const [groupRequestChange, setGroupRequestChange] = useState(false);
+  const [groupMemberChange, setGroupMemberChange] = useState(false);
 
   const router = useRouter();
   const dispatch = useDispatch();
@@ -120,12 +127,18 @@ const Chatroom = () => {
           const conversationId = event.data.substring(28);
           updateMessageRequest(conversationId);
         }
-        // else if (event.data === "new group request") {
-
-        // }
-        // else if (event.data === "new group invitation") {
-
-        // }
+        else if (event.data.substring(0, 26) === "new group request in group") {
+          const groupId = event.data.substring(27);
+          updateGroupRequest(groupId);
+        }
+        else if (event.data.substring(0, 25) === "new group notice in group") {
+          const groupId = event.data.substring(26);
+          if (activateGroupId === parseInt(groupId)) {
+            setGroupNoticeChange(pre => {
+              return !pre;
+            });
+          }
+        }
       };
     }
   });
@@ -696,7 +709,6 @@ const Chatroom = () => {
         conversationsDB.groups.toArray().then((groups) => {
           const group = groups.find((group) => group.conversation === conversationId);
           if (group) {
-            console.log(group);
             setActivateGroupId(group.id);
             getActivateConversationTitle(conversationId, group.id);
           }
@@ -867,6 +879,63 @@ const Chatroom = () => {
     setShowGroupInfo(false);
   };
 
+  //Group Request
+
+  const handleShowGroupRequest = () => {
+    setShowGroupRequest(true);
+  };
+
+  const handleGroupRequestClose = () => {
+    setShowGroupRequest(false);
+  };
+
+  const updateGroupRequest = (groupId: number) => {
+    conversationsDB.pullNewGroup(groupId)
+      .then((conversationId) => {
+        conversationsDB.pullNewConversation(conversationId)
+        .then(() => {
+          if (groupId === activateGroupId) {
+            setGroupMemberChange(pre => {
+              return !pre;
+            });
+          }
+        });
+      });
+    setGroupRequestChange(pre => {
+      return !pre;
+    });
+
+  };
+
+  const sendInviteMessage = (conversationId: number, member: string) => {
+    const finalReplyMessage = "New Member [" + member + "] joined our group\n-------------------------\nWelcome!!!";
+    addMessage(conversationId, finalReplyMessage, -1)
+      .then((res) => res.json())
+      .then((res) => {
+        if (Number(res.code) === 0) {
+          const newMessage: Message = res.message;
+          addNewMessage(newMessage);
+        }
+        else {
+          alert(res.info);
+        }
+      })
+      .catch((error) => {
+        alert(error.info);
+      });
+  };
+
+  useEffect(() => {
+    conversationsDB.pullGroupRequests()
+      .then(() => {
+        conversationsDB.groupRequests.toArray().then((groupRequests) => {
+          setGroupRequestsList(groupRequests);
+          const unreadCount = updateUnreadGroupRequestsCounts(groupRequests);
+          setUnreadGroupRequestsCount(unreadCount);
+        });
+      });
+  }, [groupRequestChange]);
+
   // return components
 
   return (
@@ -897,13 +966,27 @@ const Chatroom = () => {
               </ListItemIcon>
               <ListItemText primary="Chats"></ListItemText>
               <ListItemSecondaryAction>
+                <IconButton aria-label="Mail" onClick={handleShowGroupRequest}>
+                  <Badge badgeContent={unreadGroupRequestsCount} color="error">
+                    <MailIcon />
+                  </Badge>
+                </IconButton>
+                <GroupRequestDialog
+                  open={showGroupRequest}
+                  onhandleGroupRequestClose={handleGroupRequestClose}
+                  groupRequest={groupRequestsList}
+                  setGroupMemberChange={setGroupMemberChange}
+                  setGroupRequestChange={setGroupRequestChange}
+                  activateGroupId={activateGroupId}
+                  sendInviteMessage={sendInviteMessage}
+                ></GroupRequestDialog>
                 <IconButton edge="end" aria-label="Add Group Chat" onClick={handleAddGroupOpen}>
                   <GroupAddIcon />
                 </IconButton>
                 <AddGroupDialog
                   open={addGroupOpen}
                   friends={friendsList}
-                  onhandleClose={handleAddGroupClose}
+                  onhandleGroupRequestClose={handleAddGroupClose}
                   onhandleAddGroup={handleAddGroup}
                   onSetFriendRequestChange={setFriendRequestChange}
                 ></AddGroupDialog>
@@ -1014,7 +1097,12 @@ const Chatroom = () => {
                       authEmail={authEmail}
                       activateConversationId={activateConversationId}
                       activateGroupId={activateGroupId}
+                      addNewMessage={addNewMessage}
+                      groupNoticeChange={groupNoticeChange}
+                      groupMemberChange={groupMemberChange}
                       onSetFriendRequestChange={setFriendRequestChange}
+                      onSetConversationChange={setConversationChange}
+                      onSetActivateConversationId={setActivateConversationId}
                     />
                   </Grid>
                 )}

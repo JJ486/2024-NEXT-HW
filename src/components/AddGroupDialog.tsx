@@ -40,7 +40,7 @@ export default function AddGroupDialog(props: any) {
     <Dialog
       open={props.open}
       onClose={() => {
-        props.onhandleClose();
+        props.onhandleGroupRequestClose();
         setMembers([]);
         setGroupName("");
       }}
@@ -84,7 +84,7 @@ export default function AddGroupDialog(props: any) {
       </div>
       <DialogActions>
       <Button style={{ textTransform: "none", fontSize: "1.1rem" }} onClick={() => {
-          props.onhandleClose();
+          props.onhandleGroupRequestClose();
           setMembers([]);
           setGroupName("");
         }}>
@@ -94,7 +94,7 @@ export default function AddGroupDialog(props: any) {
         style={{ textTransform: "none", fontSize: "1.1rem" }}
         onClick={() => {
           props.onhandleAddGroup(groupName, members);
-          props.onhandleClose();
+          props.onhandleGroupRequestClose();
           setMembers([]);
           setGroupName("");
         }}

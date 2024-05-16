@@ -51,3 +51,12 @@ export interface Notice {
   content: string;
   timestamp: string;
 }
+
+export interface GroupRequest {
+  group: number;
+  sender: string;
+  nickname: string;
+  email: string;
+  status: "Pending" | "Accept" | "Reject";
+  timestamp: string;
+}

@@ -1,11 +1,17 @@
 import Dexie from "dexie";
-import { Friend, FriendRequest, Conversation, ConversationMessage, Message, Group } from "./types";
+import { Friend, FriendRequest, Conversation, ConversationMessage, Message, Group, GroupRequest } from "./types";
 import { getFriends, getFriendRequests } from "./friend";
 import { getWholeConversations, getWholeMessages, getNewMessages, getConversation, readConversation, deleteMessage } from "./chat";
-import { getWholeGroups, addManager, deleteManager, changeMaster, removeMember } from "../api/group";
+import { getWholeGroups, addManager, deleteManager, changeMaster, removeMember, getWholeGroupRequests, getGroup } from "../api/group";
 
 export function updateUnreadFriendRequestsCounts(friendRequests: FriendRequest[]) {
   const newRequests = friendRequests.filter((request) => request.status === "Pending");
+  const newRequestsCount = newRequests.length;
+  return newRequestsCount;
+}
+
+export function updateUnreadGroupRequestsCounts(groupRequests: GroupRequest[]) {
+  const newRequests = groupRequests.filter((request) => request.status === "Pending");
   const newRequestsCount = newRequests.length;
   return newRequestsCount;
 }
@@ -85,23 +91,27 @@ export class CachedConversations extends Dexie {
   conversations: Dexie.Table<Conversation, number>;
   conversationMessages: Dexie.Table<ConversationMessage, number>;
   groups: Dexie.Table<Group, number>;
+  groupRequests: Dexie.Table<GroupRequest, number>;
 
   constructor() {
     super("CachedConversations");
     this.version(1).stores({
       conversations: "&id, type, members",
       conversationMessages: "&id",
-      groups: "&id, name, conversation, master, manager, notice"
+      groups: "&id, name, conversation, master, manager, notice",
+      groupRequests: "&group, sender, nickname, email, status, timestamp",
     });
     this.conversations = this.table("conversations");
     this.conversationMessages = this.table("conversationMessages");
     this.groups = this.table("groups");
+    this.groupRequests = this.table("groupRequests");
   }
 
   async clearCachedData() {
     await this.conversations.clear();
     await this.conversationMessages.clear();
     await this.groups.clear();
+    await this.groupRequests.clear();
   }
 
   async pullWholeConversations() {
@@ -448,6 +458,81 @@ export class CachedConversations extends Dexie {
             await this.conversations.put(updatedConversation);
           }
         }
+      }
+      else {
+        alert(data.info);
+      }
+    }
+    catch (error: any) {
+      alert(error.info);
+    }
+  }
+
+  async leaveGroup(groupId: number) {
+    const group = await this.groups.get(groupId);
+    if (group) {
+      const updatedConversation = await this.conversations
+        .filter((conversation) => conversation.id !== group.conversation)
+        .toArray();
+      await this.conversations.clear();
+      await this.conversations.bulkPut(updatedConversation);
+    }
+  }
+
+  async pullGroupRequests() {
+    let newRequests: GroupRequest[] = [];
+    let unreadCount = 0;
+    try {
+      const res = await getWholeGroupRequests();
+      const data = await res.json();
+      if (Number(data.code) === 0) {
+        newRequests = data.requests;
+        const count = updateUnreadGroupRequestsCounts(newRequests);
+        unreadCount = count;
+        this.groupRequests.clear();
+        this.groupRequests.bulkPut(data.requests);
+      }
+      else {
+        alert(data.info);
+      }
+    }
+    catch (error: any) {
+      alert(error.info);
+    }
+    return unreadCount;
+  }
+
+  async addNewMember(conversationId: number, member: string) {
+    const conversation = await this.conversations.get(conversationId);
+    if (conversation) {
+      conversation.members.push(member);
+      await this.conversations.put(conversation);
+    }
+  }
+
+  async pullNewConversation(conversationId: number) {
+    try {
+      const res = await getConversation(conversationId);
+      const data = await res.json();
+      if (Number(data.code) === 0) {
+        await this.conversations.put(data.conversations[0]);
+      }
+      else {
+        alert(data.info);
+      }
+    }
+    catch (error: any) {
+      alert(error.info);
+    }
+  }
+
+  async pullNewGroup(groupId: number) {
+    try {
+      const res = await getGroup(groupId);
+      const data = await res.json();
+      if (Number(data.code) === 0) {
+        await this.groups.put(data.groups[0]);
+        return data.groups[0].conversation;
       }
       else {
         alert(data.info);

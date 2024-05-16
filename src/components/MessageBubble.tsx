@@ -13,11 +13,14 @@ import { CheckCircleOutline, RadioButtonUnchecked } from "@mui/icons-material";
 import md5 from "md5";
 import { friendsDB, conversationsDB } from "../api/db";
 import { Conversation, Friend } from "../api/types";
+import PlaylistAddCheckCircleIcon from "@mui/icons-material/PlaylistAddCheckCircle";
+import { findFriend } from "../api/friend";
 
 export default function MessageBubble(props: any) {
   const [avatars, setAvatars] = useState<{ [key: string]: string }>({});
   const [username, setUsername] = useState<string[]>([]);
   const [anchorEls, setAnchorEls] = useState<{ [key: number]: HTMLElement | null }>({});
+  const [groupAnchorEls, setGroupAnchorEls] = useState<{ [key: number]: HTMLElement | null }>({});
   const paperRefs = useRef<{ [key: number]: HTMLDivElement | null }>({});
   const [paperWidths, setPaperWidths] = useState<{ [key: number]: number }>({});
 
@@ -30,11 +33,22 @@ export default function MessageBubble(props: any) {
     setAnchorEls({});
   };
 
+  const handleGroupClick = (event: React.MouseEvent<Element, MouseEvent>, messageId: number) => {
+    event.preventDefault();
+    setGroupAnchorEls({ [messageId]: event.currentTarget as HTMLElement });
+  };
+
+  const handleGroupClose = () => {
+    setGroupAnchorEls({});
+  };
+
   useEffect(() => {
     setAnchorEls({});
+    setGroupAnchorEls({});
   }, [props.messages]);
 
   useEffect(() => {
+    let flag = false;
     const fetchAvatars = async () => {
       const newAvatars: { [key: string]: string } = {};
       const newUsername: string[] = [];
@@ -53,8 +67,37 @@ export default function MessageBubble(props: any) {
             newUsername.push(member);
           }
         });
-        setAvatars(newAvatars);
-        setUsername(newUsername);
+        if (conversation.type === 0) {
+          setAvatars(newAvatars);
+          setUsername(newUsername);
+        }
+        else {
+          for (const message of props.messages) {
+            if (newAvatars[message.sender] === undefined) {
+              flag = true;
+              findFriend(message.sender)
+                .then((res) => res.json())
+                .then((res) => {
+                  if (Number(res.code) === 0) {
+                    newAvatars[message.sender] = md5(res.userinfo.email.trim().toLowerCase());
+                    newUsername.push(message.sender);
+                    setAvatars(newAvatars);
+                    setUsername(newUsername);
+                  }
+                  else {
+                    alert(res.info);
+                  }
+                })
+                .catch((error: any) => {
+                  alert(error.info);
+                });
+            }
+          }
+          if (!flag) {
+            setAvatars(newAvatars);
+            setUsername(newUsername);
+          }
+        }
       }
     };
     fetchAvatars();
@@ -199,8 +242,47 @@ export default function MessageBubble(props: any) {
                           {message.read.includes(username[0] === props.authUserName ? username[1] : username[0]) ? <CheckCircleOutline fontSize="small" style={{ color: "green" }} /> : <RadioButtonUnchecked fontSize="small" color="disabled" />}
                         </div>
                       ) : (
-                        // 群聊后续实现
-                        null
+                        <div style={{ marginTop: "1px", marginRight: "3px" }}>
+                          <PlaylistAddCheckCircleIcon
+                            fontSize="small"
+                            style={{ cursor: "pointer" }}
+                            onClick={(event) => handleGroupClick(event, message.id)}
+                          />
+                          <Menu
+                            anchorEl={groupAnchorEls[message.id]}
+                            open={Boolean(groupAnchorEls[message.id])}
+                            onClose={handleGroupClose}
+                            anchorOrigin={{
+                              vertical: "top",
+                              horizontal: "right"
+                            }}
+                            transformOrigin={{
+                              vertical: "top",
+                              horizontal: "right"
+                            }}
+                            style={{ marginLeft: "-40px" }}
+                          >
+                            <List>
+                              {username.map((name) => (
+                                (name !== message.sender && (
+                                  <ListItem key={name}>
+                                    <Avatar
+                                      alt={name}
+                                      src={`https://www.gravatar.com/avatar/${avatars[name]}?d=identicon&s=150`}
+                                      style={{ width: "40px", height: "40px", marginRight: "10px" }}
+                                    />
+                                    <ListItemText primary={name} style={{ marginRight: "8px" }} />
+                                    {message.read.includes(name) ? (
+                                      <CheckCircleOutline fontSize="small" style={{ color: "green" }} />
+                                    ) : (
+                                      <RadioButtonUnchecked fontSize="small" color="disabled" />
+                                    )}
+                                  </ListItem>
+                                ))
+                              ))}
+                            </List>
+                          </Menu>
+                        </div>
                       )}
                       <Typography variant="caption">{getTime(message.timestamp)}</Typography>
                     </div>
@@ -299,8 +381,47 @@ export default function MessageBubble(props: any) {
                           {message.read.includes(props.authUserName) ? <CheckCircleOutline fontSize="small" style={{ color: "green" }} /> : <RadioButtonUnchecked fontSize="small" color="disabled" />}
                         </div>
                       ) : (
-                        // 群聊后续实现
-                        null
+                        <div style={{ marginTop: "1px", marginRight: "3px" }}>
+                          <PlaylistAddCheckCircleIcon
+                            fontSize="small"
+                            style={{ cursor: "pointer" }}
+                            onClick={(event) => handleGroupClick(event, message.id)}
+                          />
+                          <Menu
+                            anchorEl={groupAnchorEls[message.id]}
+                            open={Boolean(groupAnchorEls[message.id])}
+                            onClose={handleGroupClose}
+                            anchorOrigin={{
+                              vertical: "top",
+                              horizontal: "right"
+                            }}
+                            transformOrigin={{
+                              vertical: "top",
+                              horizontal: "right"
+                            }}
+                            style={{ marginLeft: "175px" }}
+                          >
+                            <List>
+                              {username.map((name) => (
+                                (name !== message.sender && (
+                                  <ListItem key={name}>
+                                    <Avatar
+                                      alt={name}
+                                      src={`https://www.gravatar.com/avatar/${avatars[name]}?d=identicon&s=150`}
+                                      style={{ width: "40px", height: "40px", marginRight: "10px" }}
+                                    />
+                                    <ListItemText primary={name} style={{ marginRight: "8px" }} />
+                                    {message.read.includes(name) ? (
+                                      <CheckCircleOutline fontSize="small" style={{ color: "green" }} />
+                                    ) : (
+                                      <RadioButtonUnchecked fontSize="small" color="disabled" />
+                                    )}
+                                  </ListItem>
+                                ))
+                              ))}
+                            </List>
+                          </Menu>
+                        </div>
                       )}
                     </div>
                   </div>

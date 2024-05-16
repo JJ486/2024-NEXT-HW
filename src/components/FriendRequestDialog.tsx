@@ -18,6 +18,12 @@ import Grid from "@material-ui/core/Grid";
 import Box from "@mui/material/Box";
 
 export default function FriendRequestDialog(props: any) {
+
+  const getTime = (timestamp: string) => {
+    const date = new Date(timestamp);
+    return `${date.getMonth() + 1}/${date.getDate()} ${date.getHours()}:${date.getMinutes() < 10 ? "0" : ""}${date.getMinutes()}`;
+  };
+
   return (
     <Dialog open={props.open} onClose={props.onhandleClose}>
       <DialogTitle>Friend Requests</DialogTitle>
@@ -33,8 +39,8 @@ export default function FriendRequestDialog(props: any) {
               </ListItemAvatar>
               <Grid style={{ width: "350px" }}>
                 <ListItemText
-                  primary={request.nickname ? `${request.nickname}` : `${request.username}`}
-                  secondary={`${new Date(parseInt(request.timestamp)).toLocaleString()}`}
+                  primary={`${request.username}`}
+                  secondary={getTime(request.timestamp)}
                 />
               </Grid>
               <Grid container direction="row" alignItems="center" justifyContent="flex-end" spacing={1} style={{ marginRight: "3px" }}>

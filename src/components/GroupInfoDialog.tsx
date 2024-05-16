@@ -21,8 +21,9 @@ import Menu from "@material-ui/core/Menu";
 import { Box } from "@mui/material";
 import SupervisedUserCircleIcon from "@mui/icons-material/SupervisedUserCircle";
 import CustomInput from "./CustomInput";
-import { getGroupNotice, addGroupNotice } from "../api/group";
-import { Notice } from "../api/types";
+import { getGroupNotice, addGroupNotice, leaveGroup, inviteFriend } from "../api/group";
+import { Notice, Message } from "../api/types";
+import { addMessage } from "../api/chat";
 
 export default function GroupInfoDialog(props: any) {
   const [avatars, setAvatars] = useState<{ [key: string]: string }>({});
@@ -41,6 +42,8 @@ export default function GroupInfoDialog(props: any) {
   const [groupNotice, setGroupNotice] = useState<Notice[]>([]);
   const [newNotice, setNewNotice] = useState<string>("");
   const [showAddNotice, setShowAddNotice] = useState<boolean>(false);
+  const [showInviteFriend, setShowInviteFriend] = useState<boolean>(false);
+  const [invitedFriend, setInvitedFriend] = useState<string>("");
 
   const handleSettingsOpen = () => {
     setShowSettings(true);
@@ -56,6 +59,14 @@ export default function GroupInfoDialog(props: any) {
 
   const handleAddNoticeClose = () => {
     setShowAddNotice(false);
+  };
+
+  const handleInviteFriendOpen = () => {
+    setShowInviteFriend(true);
+  };
+
+  const handleInviteFriendClose = () => {
+    setShowInviteFriend(false);
   };
 
   const getHash = async (username: string) => {
@@ -81,12 +92,14 @@ export default function GroupInfoDialog(props: any) {
   };
 
   useEffect(() => {
+    console.log("GroupInfoDialog useEffect");
     const fetchAvatars = async () => {
       const newAvatars: { [key: string]: string } = {};
       const conversation = await conversationsDB.conversations
         .filter(conversation => conversation.id === props.activateConversationId)
         .first();
       if (conversation) {
+        console.log(conversation);
         const memberPromises = conversation.members.map(member => getHash(member));
         const hashes = await Promise.all(memberPromises);
         newAvatars[props.authUserName] = md5(props.authEmail.trim().toLowerCase());
@@ -119,7 +132,6 @@ export default function GroupInfoDialog(props: any) {
               }
             });
           }
-          console.log(newMaster);
           setAvatars(newAvatars);
           setMaster(newMaster);
           setManagers(newManagers);
@@ -127,18 +139,17 @@ export default function GroupInfoDialog(props: any) {
       }
     };
     fetchAvatars();
-  }, [props.activateConversationId]);
+  }, [props.activateConversationId, props.groupMemberChange]);
 
   useEffect(() => {
     getGroupNotice(props.activateGroupId)
       .then((res) => res.json())
       .then((res) => {
         if (Number(res.code) === 0) {
-          console.log(res.notices);
           setGroupNotice(res.notices);
         }
       });
-  }, [props.activateGroupId]);
+  }, [props.activateGroupId, props.groupNoticeChange]);
 
   const handleMenuOpen = (event: React.MouseEvent<HTMLButtonElement>) => {
     setAnchorEl(event.currentTarget);
@@ -275,6 +286,58 @@ export default function GroupInfoDialog(props: any) {
           setGroupNotice(preGroupNotice => {
             return [...preGroupNotice, res.notice];
           });
+          const finalReplyMessage = "[New Group Notice]\n-------------------------\n" + res.notice.content;
+          addMessage(res.notice.conversation, finalReplyMessage, -1)
+            .then((res) => res.json())
+            .then((res) => {
+              if (Number(res.code) === 0) {
+                const newMessage: Message = res.message;
+                props.addNewMessage(newMessage);
+              }
+              else {
+                alert(res.info);
+              }
+            })
+            .catch((error) => {
+              alert(error.info);
+            });
+        }
+      })
+      .catch((error) => {
+        alert(error.info);
+      });
+  };
+
+  const handleleaveGroup = (groupId: number) => {
+    if (Object.keys(master)[0] === props.authUserName) {
+      alert("Master cannot leave group.");
+    }
+    else if (Object.keys(managers).includes(props.authUserName)) {
+      delete managers[props.authUserName];
+      leaveGroup(groupId);
+      conversationsDB.leaveGroup(groupId);
+      props.onSetConversationChange((pre: boolean) => {
+        return !pre;
+      });
+    }
+    else {
+      delete avatars[props.authUserName];
+      leaveGroup(groupId);
+      conversationsDB.leaveGroup(groupId);
+      props.onSetConversationChange((pre: boolean) => {
+        return !pre;
+      });
+    }
+    props.onSetActivateConversationId(-1);
+    props.onhandleClose();
+  };
+
+  const handleInviteFriend = (groupId: number) => {
+    inviteFriend(groupId, invitedFriend)
+      .then((res) => res.json())
+      .then((res) => {
+        if (Number(res.code) === 0) {
+          alert(`You have invited Friend ${invitedFriend} successfully. Wait for Master or Manager to Accept.`);
         }
       })
       .catch((error) => {
@@ -297,12 +360,12 @@ export default function GroupInfoDialog(props: any) {
           </Grid>
           <Grid item xs={12}>
             <Grid container alignItems="center" style={{ justifyContent: "space-between" }}>
-              <Grid item>
+              <Grid item xs={10}>
                 <Typography variant="h6">Members</Typography>
               </Grid>
               {(Object.keys(master)[0] === props.authUserName || Object.keys(managers).includes(props.authUserName)) && (
-                <Grid item>
-                  <IconButton onClick={handleSettingsOpen}>
+                <Grid item xs={1}>
+                  <IconButton onClick={handleSettingsOpen} style={{ right: 10 }}>
                     <SupervisedUserCircleIcon />
                   </IconButton>
                   <Dialog
@@ -425,6 +488,52 @@ export default function GroupInfoDialog(props: any) {
                   </Dialog>
                 </Grid>
               )}
+              <Grid item xs={1}>
+                <IconButton onClick={handleInviteFriendOpen} style={{ right: 10 }}>
+                  <AddIcon />
+                </IconButton>
+                <Dialog
+                  open={showInviteFriend}
+                  onClose={handleInviteFriendClose}
+                  PaperProps={{
+                    style: {
+                      width: "500px",
+                      maxHeight: "90vh",
+                      overflowY: "auto"
+                    }
+                  }}
+                >
+                  <DialogTitle>
+                    Invite Friend
+                    <IconButton aria-label="close" onClick={handleInviteFriendClose} style={{ position: "absolute", top: 10, right: 10 }}>
+                      <CloseIcon />
+                    </IconButton>
+                  </DialogTitle>
+                  <Divider />
+                  <DialogContent sx={{ overflowY: "visible" }}>
+                    <CustomInput
+                      label="Type Friend Username to invite"
+                      id="InviteFriend"
+                      name="InviteFriend"
+                      value={invitedFriend}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setInvitedFriend(e.target.value)}
+                      autoFocus
+                    ></CustomInput>
+                    <DialogActions>
+                      <Button
+                        style={{ textTransform: "none", fontSize: "1.1rem" }}
+                        onClick={() => {
+                          handleInviteFriend(props.activateGroupId);
+                          setInvitedFriend("");
+                          handleInviteFriendClose();
+                        }}
+                      >
+                        Submit
+                      </Button>
+                    </DialogActions>
+                  </DialogContent>
+                </Dialog>
+              </Grid>
             </Grid>
             <Grid container direction="row" style={{ margin: "10px 0" }}>
               {Object.keys(master).map((key) => {
@@ -564,7 +673,6 @@ export default function GroupInfoDialog(props: any) {
                         <Button
                           style={{ textTransform: "none", fontSize: "1.1rem" }}
                           onClick={() => {
-                            console.log(props.activateGroupId);
                             addNewGroupNotice(props.activateGroupId, newNotice);
                             setNewNotice("");
                             handleAddNoticeClose();
@@ -601,7 +709,6 @@ export default function GroupInfoDialog(props: any) {
                         />
                       </Grid>
                     </Grid>
-                    
                   </ListItem>
                 ))}
               </List>
@@ -610,8 +717,20 @@ export default function GroupInfoDialog(props: any) {
           <Grid item xs={12}>
             <Divider />
           </Grid>
-          <Grid item xs={12}>
-            <Button variant="outlined" color="secondary" onClick={props.onLeaveGroup}>
+          <Grid item xs={12} style={{ display: "flex", justifyContent: "center" }}>
+            <Button
+              variant="outlined"
+              color="secondary"
+              onClick={() => handleleaveGroup(props.activateGroupId)}
+              style={{
+                backgroundColor: "rgba(255, 0, 0, 0.7)",
+                color: "white",
+                width: "300px",
+                height: "50px",
+                borderRadius: "10px",
+                justifyContent: "center"
+              }}
+            >
               Leave Group
             </Button>
           </Grid>
