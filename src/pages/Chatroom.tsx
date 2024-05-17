@@ -90,6 +90,7 @@ const Chatroom = () => {
   const [groupRequestsList, setGroupRequestsList] = useState<GroupRequest[]>([]);
   const [groupRequestChange, setGroupRequestChange] = useState(false);
   const [groupMemberChange, setGroupMemberChange] = useState(false);
+  const [alerted, setAlerted] = useState(false);
 
   const router = useRouter();
   const dispatch = useDispatch();
@@ -147,10 +148,15 @@ const Chatroom = () => {
 
   useEffect(() => {
     const cookie_jwtToken = Cookies.get("jwt_token");
-    if (!cookie_jwtToken) {
-      router.push(`/SignIn`);
+    if (!cookie_jwtToken) { 
+      if (!alerted) {
+        alert("Please sign in again.");
+        setAlerted(true);
+        router.push(`/SignIn`);
+      }
     }
     else {
+      setAlerted(false);
       if (authUserName === undefined || authUserName === "") {
         const header = new Headers();
         header.append("authorization", cookie_jwtToken);
@@ -169,10 +175,8 @@ const Chatroom = () => {
             alert(res.info);
           }
         })
-        .catch(() => {
-          alert("Please sign in again.");
-          Cookies.remove("jwt_token");
-          router.push(`/SignIn`);
+        .catch((error) => {
+          alert(error.info);
         });
       }
     }
@@ -332,7 +336,9 @@ const Chatroom = () => {
   };
 
   useEffect(() => {
-    friendsDB.pullFriendRequests()
+    const cookie_jwtToken = Cookies.get("jwt_token");
+    if (cookie_jwtToken) {
+      friendsDB.pullFriendRequests()
       .then(() => {
         friendsDB.friendRequests.toArray().then((friendRequests) => {
           setFriendRequestList(friendRequests);
@@ -340,6 +346,7 @@ const Chatroom = () => {
           setUnreadFriendRequestsCount(unreadCount);
         });
       });
+    }
   }, [friendRequestChange]);
 
   // FriendList
@@ -397,7 +404,9 @@ const Chatroom = () => {
   };
 
   useEffect(() => {
-    friendsDB.pullFriends()
+    const cookie_jwtToken = Cookies.get("jwt_token");
+    if (cookie_jwtToken) {
+      friendsDB.pullFriends()
       .then(() => {
         friendsDB.friends.toArray().then((friends) => {
           setFriendsList(friends);
@@ -410,6 +419,7 @@ const Chatroom = () => {
           setTags(friendTags);
         });
       });
+    }
   }, [friendChange]);
 
   const handleFriendtoChat = (friendname: string) => {
@@ -739,8 +749,41 @@ const Chatroom = () => {
   };
 
   useEffect(() => {
-    if (!initialRender) {
-      setTimeout(() => {
+    const cookie_jwtToken = Cookies.get("jwt_token");
+    if (cookie_jwtToken) {
+      if (!initialRender) {
+        setTimeout(() => {
+          conversationsDB.conversationMessages.toArray().then((conversationMessages) => {
+            const messageTimestamps = conversationMessages.map((conversationMessage) => {
+              const lastMessage = conversationMessage.messages[conversationMessage.messages.length - 1];
+              return {
+                id: conversationMessage.id,
+                timestamp: new Date(lastMessage.timestamp).getTime()
+              };
+            });
+            messageTimestamps.sort((a, b) => b.timestamp - a.timestamp);
+            const sortedIds = messageTimestamps.map((item) => item.id);
+            conversationsDB.conversations.toArray().then((conversations) => {
+              const sortedConversations = sortedIds.map((id) => conversations.find((conversation) => conversation.id === id));
+              const filteredConversations = sortedConversations.filter((conversation) => conversation !== undefined) as Conversation[];
+              setConversationList(filteredConversations);
+            });
+          });
+        }, 200);
+      }
+      else {
+        setInitialRender(false);
+      }
+    }
+  }, [conversationChange]);
+
+  useEffect(() => {
+    const cookie_jwtToken = Cookies.get("jwt_token");
+    if (cookie_jwtToken) {
+      conversationsDB.pullWholeConversationMessages().then((conversationUnreadCounts) => {
+        setConversationUnreadCounts(conversationUnreadCounts);
+        const totalCount = Object.values(conversationUnreadCounts).reduce((total, count) => total + count, 0);
+        setTotalUnreadCounts(totalCount);
         conversationsDB.conversationMessages.toArray().then((conversationMessages) => {
           const messageTimestamps = conversationMessages.map((conversationMessage) => {
             const lastMessage = conversationMessage.messages[conversationMessage.messages.length - 1];
@@ -757,35 +800,8 @@ const Chatroom = () => {
             setConversationList(filteredConversations);
           });
         });
-      }, 200);
-    }
-    else {
-      setInitialRender(false);
-    }
-  }, [conversationChange]);
-
-  useEffect(() => {
-    conversationsDB.pullWholeConversationMessages().then((conversationUnreadCounts) => {
-      setConversationUnreadCounts(conversationUnreadCounts);
-      const totalCount = Object.values(conversationUnreadCounts).reduce((total, count) => total + count, 0);
-      setTotalUnreadCounts(totalCount);
-      conversationsDB.conversationMessages.toArray().then((conversationMessages) => {
-        const messageTimestamps = conversationMessages.map((conversationMessage) => {
-          const lastMessage = conversationMessage.messages[conversationMessage.messages.length - 1];
-          return {
-            id: conversationMessage.id,
-            timestamp: new Date(lastMessage.timestamp).getTime()
-          };
-        });
-        messageTimestamps.sort((a, b) => b.timestamp - a.timestamp);
-        const sortedIds = messageTimestamps.map((item) => item.id);
-        conversationsDB.conversations.toArray().then((conversations) => {
-          const sortedConversations = sortedIds.map((id) => conversations.find((conversation) => conversation.id === id));
-          const filteredConversations = sortedConversations.filter((conversation) => conversation !== undefined) as Conversation[];
-          setConversationList(filteredConversations);
-        });
       });
-    });
+    }
   }, []);
 
   // Reply Message
@@ -821,7 +837,10 @@ const Chatroom = () => {
   // Add Group
 
   useEffect(() => {
-    conversationsDB.pullGroups();
+    const cookie_jwtToken = Cookies.get("jwt_token");
+    if (cookie_jwtToken) {
+      conversationsDB.pullGroups();
+    }
   }, [groupChange]);
 
   const handleAddGroupOpen = () => {
@@ -927,7 +946,9 @@ const Chatroom = () => {
   };
 
   useEffect(() => {
-    conversationsDB.pullGroupRequests()
+    const cookie_jwtToken = Cookies.get("jwt_token");
+    if (cookie_jwtToken) {
+      conversationsDB.pullGroupRequests()
       .then(() => {
         conversationsDB.groupRequests.toArray().then((groupRequests) => {
           setGroupRequestsList(groupRequests);
@@ -935,6 +956,7 @@ const Chatroom = () => {
           setUnreadGroupRequestsCount(unreadCount);
         });
       });
+    }
   }, [groupRequestChange]);
 
   // return components

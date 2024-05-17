@@ -62,7 +62,8 @@ export default function SignIn() {
       .then((res) => {
         if (Number(res.code) === 0) {
           alert(username + SUGNIN_SUCCESS);
-          Cookies.set("jwt_token", res.token);
+          const expires = new Date(new Date().getTime() + 60 * 60 * 1000);
+          Cookies.set("jwt_token", res.token, { expires });
           dispatch(setToken(res.token));
           dispatch(setName(username));
           router.push({
