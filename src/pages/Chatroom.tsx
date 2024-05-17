@@ -426,6 +426,7 @@ const Chatroom = () => {
         setShowChats(true);
         conversationsDB.conversationMessages.get(conversation[0].id).then((conversationMessages) => {
           if (conversationMessages) {
+            setActivateConversationType(0);
             setMessageList(conversationMessages.messages);
           }
         });
