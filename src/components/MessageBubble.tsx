@@ -59,12 +59,16 @@ export default function MessageBubble(props: any) {
         const memberPromises = conversation.members.map(member => getHash(member));
         const hashes = await Promise.all(memberPromises);
         newAvatars[props.authUserName] = md5(props.authEmail.trim().toLowerCase());
-        newUsername.push(props.authUserName);
+        if (!newUsername.includes(props.authUserName)) {
+          newUsername.push(props.authUserName);
+        }
         conversation.members.forEach((member, index) => {
           const hash = hashes[index];
           if (hash !== null) {
             newAvatars[member] = hash;
-            newUsername.push(member);
+            if (!newUsername.includes(member)) {
+              newUsername.push(member);
+            }
           }
         });
         if (conversation.type === 0) {
@@ -80,7 +84,9 @@ export default function MessageBubble(props: any) {
                 .then((res) => {
                   if (Number(res.code) === 0) {
                     newAvatars[message.sender] = md5(res.userinfo.email.trim().toLowerCase());
-                    newUsername.push(message.sender);
+                    if (!newUsername.includes(message.sender)) {
+                      newUsername.push(message.sender);
+                    }
                     setAvatars(newAvatars);
                     setUsername(newUsername);
                   }

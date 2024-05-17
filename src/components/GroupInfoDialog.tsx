@@ -339,6 +339,9 @@ export default function GroupInfoDialog(props: any) {
         if (Number(res.code) === 0) {
           alert(`You have invited Friend ${invitedFriend} successfully. Wait for Master or Manager to Accept.`);
         }
+        else {
+          alert(res.info);
+        }
       })
       .catch((error) => {
         alert(error.info);
@@ -391,7 +394,7 @@ export default function GroupInfoDialog(props: any) {
                           <DialogContent sx={{ overflowY: "visible" }}>
                             <Typography style={{marginBottom: "8px"}}>Add Manager</Typography>
                             <CustomInput
-                              label="Tpye Member Username"
+                              label="Type Member Username"
                               id="member"
                               name="member"
                               value={newManager}
@@ -415,7 +418,7 @@ export default function GroupInfoDialog(props: any) {
                           <DialogContent sx={{ overflowY: "visible" }}>
                             <Typography style={{marginBottom: "8px"}}>Delete Manager</Typography>
                             <CustomInput
-                              label="Tpye Member Username"
+                              label="Type Member Username"
                               id="member"
                               name="member"
                               value={deleteManager}
@@ -439,7 +442,7 @@ export default function GroupInfoDialog(props: any) {
                           <DialogContent sx={{ overflowY: "visible" }}>
                             <Typography style={{marginBottom: "8px"}}>Change Master</Typography>
                             <CustomInput
-                              label="Tpye Member Username"
+                              label="Type Member Username"
                               id="member"
                               name="member"
                               value={newMaster}
@@ -465,7 +468,7 @@ export default function GroupInfoDialog(props: any) {
                     <DialogContent sx={{ overflowY: "visible" }}>
                       <Typography style={{marginBottom: "8px"}}>Remove Member</Typography>
                       <CustomInput
-                        label="Tpye Member Username"
+                        label="Type Member Username"
                         id="member"
                         name="member"
                         value={removeMember}
@@ -662,7 +665,7 @@ export default function GroupInfoDialog(props: any) {
                     <Divider />
                     <DialogContent sx={{ overflowY: "visible" }}>
                       <CustomInput
-                        label="Tpye Group Notice"
+                        label="Type Group Notice"
                         id="GroupNotice"
                         name="GroupNotice"
                         value={newNotice}
