@@ -148,7 +148,7 @@ const Chatroom = () => {
 
   useEffect(() => {
     const cookie_jwtToken = Cookies.get("jwt_token");
-    if (!cookie_jwtToken) { 
+    if (!cookie_jwtToken) {
       if (!alerted) {
         alert("Please sign in again.");
         setAlerted(true);
