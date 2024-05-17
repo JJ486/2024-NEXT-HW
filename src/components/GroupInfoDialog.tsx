@@ -570,6 +570,9 @@ export default function GroupInfoDialog(props: any) {
                 );
               })}
             </Grid>
+            <Grid style={{ marginLeft: "7px", marginTop: "6px", marginBottom: "-20px" }}>
+              <Typography>Members</Typography>
+            </Grid>
             <Grid container direction="row" style={{ margin: "10px 0" }}>
               {Object.keys(avatars).map((key) => {
                 const avatarUrl = `https://www.gravatar.com/avatar/${avatars[key]}?d=identicon&s=150`;
