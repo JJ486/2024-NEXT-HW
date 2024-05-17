@@ -12,7 +12,7 @@ const nextConfig = {
             source: "/api/:path*",
             // Change to your backend URL in production
             // change 
-            destination: "https://backend-dev-Capybara.app.secoder.net/:path*",
+            destination: "https://capybara-backend-Capybara.app.secoder.net/:path*",
             // destination: "http://localhost:9099/:path*",
         }];
     }
