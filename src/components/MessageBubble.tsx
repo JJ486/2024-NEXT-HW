@@ -166,6 +166,9 @@ export default function MessageBubble(props: any) {
               <>
                 <Grid item style={{ maxWidth: "500px", marginRight: "15px" }}>
                   <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end" }}>
+                    <Typography style={{ textAlign: "right", color: "gray", marginRight: "5px" }}>
+                      {message.sender}
+                    </Typography>
                     <div style={{ display: "flex", flexDirection: "row", alignItems: "flex-end" }}>
                       <div style={{ display: "inline-block", marginRight: "8px" }}>{message.reply_by > 0 ? `(${ message.reply_by})` : null}</div>
                       <Paper
@@ -303,6 +306,9 @@ export default function MessageBubble(props: any) {
                 />
                 <Grid item style={{ maxWidth: "500px", marginLeft: "15px" }}>
                   <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
+                    <Typography style={{ textAlign: "left", color: "gray", marginRight: "5px" }}>
+                      {message.sender}
+                    </Typography>
                     <div style={{ display: "flex", flexDirection: "row", alignItems: "flex-end" }}>
                       <Paper
                         ref={((ref: HTMLDivElement | null) => (paperRefs.current[message.id] = ref))}
