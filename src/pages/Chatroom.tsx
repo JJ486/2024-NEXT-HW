@@ -649,6 +649,8 @@ const Chatroom = () => {
           });
           setActivateConversationId(res.conversation.id);
           setActivateGroupId(-1);
+          setTotalUnreadCounts(0);
+          setConversationUnreadCounts({...conversationUnreadCounts, [res.conversation.id]: 0});
           addMessage(tempConv.id, "I passed your friend verification request. Now we can start chatting.", -1)
           .then((res) => res.json())
           .then((res) => {
@@ -865,6 +867,7 @@ const Chatroom = () => {
               });
               setActivateConversationId(res.group.conversation);
               setActivateGroupId(res.group.id);
+              setConversationTitle(groupName);
               setConversationUnreadCounts({...conversationUnreadCounts, [res.group.conversation]: 0});
             });
           addMessage(res.conversation.id, `Welcome to Group ${groupName}.`, -1)
