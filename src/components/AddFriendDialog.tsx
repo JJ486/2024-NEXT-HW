@@ -53,9 +53,6 @@ export default function AddFriendDialog(props: any) {
           style={{ textTransform: "none", fontSize: "1.1rem" }}
           onClick={() => {
             props.onhandleSubmitFriendRequest();
-            props.onSetFriendRequestChange((preFriendRequestChange: boolean) => {
-              return !preFriendRequestChange;
-            });
           }}
           color="primary"
         >
