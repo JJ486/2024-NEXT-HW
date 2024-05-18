@@ -76,16 +76,16 @@ export default function MessageBubble(props: any) {
           setUsername(newUsername);
         }
         else {
-          for (const message of props.messages) {
-            if (newAvatars[message.sender] === undefined) {
+          for (const member of conversation.members) {
+            if (!newUsername.includes(member)) {
               flag = true;
-              findFriend(message.sender)
+              findFriend(member)
                 .then((res) => res.json())
                 .then((res) => {
                   if (Number(res.code) === 0) {
-                    newAvatars[message.sender] = md5(res.userinfo.email.trim().toLowerCase());
-                    if (!newUsername.includes(message.sender)) {
-                      newUsername.push(message.sender);
+                    newAvatars[member] = md5(res.userinfo.email.trim().toLowerCase());
+                    if (!newUsername.includes(member)) {
+                      newUsername.push(member);
                     }
                     setAvatars(newAvatars);
                     setUsername(newUsername);
@@ -107,7 +107,7 @@ export default function MessageBubble(props: any) {
       }
     };
     fetchAvatars();
-  }, [props.activateConversationId]);
+  }, [props.activateConversationId, props.groupMemberChange]);
 
   const getHash = async (username: string) => {
     return friendsDB.friends.filter(friend => friend.username === username).toArray()

@@ -92,14 +92,12 @@ export default function GroupInfoDialog(props: any) {
   };
 
   useEffect(() => {
-    console.log("GroupInfoDialog useEffect");
     const fetchAvatars = async () => {
       const newAvatars: { [key: string]: string } = {};
       const conversation = await conversationsDB.conversations
         .filter(conversation => conversation.id === props.activateConversationId)
         .first();
       if (conversation) {
-        console.log(conversation);
         const memberPromises = conversation.members.map(member => getHash(member));
         const hashes = await Promise.all(memberPromises);
         newAvatars[props.authUserName] = md5(props.authEmail.trim().toLowerCase());

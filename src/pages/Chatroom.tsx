@@ -103,7 +103,7 @@ const Chatroom = () => {
 
   useEffect(() => {
     if (!wsRef.current) {
-      wsRef.current = new WebSocket(`wss://backend-dev-Capybara.app.secoder.net/ws/?jwt=${jwtToken}`);
+      wsRef.current = new WebSocket(`wss://capybara-backend-Capybara.app.secoder.net/ws/?jwt=${jwtToken}`);
       wsRef.current.onopen = () => {
         console.log("WebSocket Connected");
       };
@@ -432,6 +432,7 @@ const Chatroom = () => {
       .toArray()
       .then(conversation => {
         setActivateConversationId(conversation[0].id);
+        getActivateConversationTitle(conversation[0].id, -1);
         setActivateGroupId(-1);
         setShowChats(true);
         conversationsDB.conversationMessages.get(conversation[0].id).then((conversationMessages) => {
@@ -864,6 +865,7 @@ const Chatroom = () => {
               });
               setActivateConversationId(res.group.conversation);
               setActivateGroupId(res.group.id);
+              setConversationUnreadCounts({...conversationUnreadCounts, [res.group.conversation]: 0});
             });
           addMessage(res.conversation.id, `Welcome to Group ${groupName}.`, -1)
             .then((res) => res.json())
@@ -1138,6 +1140,7 @@ const Chatroom = () => {
                   conversations={conversationList}
                   authUserName={authUserName}
                   authEmail={authEmail}
+                  groupMemberChange={groupMemberChange}
                   activateConversationId={activateConversationId}
                   activateConversationType={activateConversationType}
                   onhandleReplyMessage={handleReplyMessage}
