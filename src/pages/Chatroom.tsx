@@ -868,6 +868,7 @@ const Chatroom = () => {
               setActivateConversationId(res.group.conversation);
               setActivateGroupId(res.group.id);
               setConversationTitle(groupName);
+              setActivateConversationType(1);
               setConversationUnreadCounts({...conversationUnreadCounts, [res.group.conversation]: 0});
             });
           addMessage(res.conversation.id, `Welcome to Group ${groupName}.`, -1)
