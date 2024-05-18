@@ -76,19 +76,22 @@ export default function MessageBubble(props: any) {
           setUsername(newUsername);
         }
         else {
-          for (const member of conversation.members) {
+          const newMembers = conversation.members;
+          for (const message of props.messages) {
+            newMembers.push(message.sender);
+          }
+          const promises: Promise<void>[] = [];
+          for (const member of newMembers) {
             if (!newUsername.includes(member)) {
-              flag = true;
-              findFriend(member)
+              const promise = findFriend(member)
                 .then((res) => res.json())
                 .then((res) => {
                   if (Number(res.code) === 0) {
-                    newAvatars[member] = md5(res.userinfo.email.trim().toLowerCase());
+                    flag = true;
                     if (!newUsername.includes(member)) {
+                      newAvatars[member] = md5(res.userinfo.email.trim().toLowerCase());
                       newUsername.push(member);
                     }
-                    setAvatars(newAvatars);
-                    setUsername(newUsername);
                   }
                   else {
                     alert(res.info);
@@ -97,12 +100,12 @@ export default function MessageBubble(props: any) {
                 .catch((error: any) => {
                   alert(error.info);
                 });
+              promises.push(promise);
             }
           }
-          if (!flag) {
-            setAvatars(newAvatars);
-            setUsername(newUsername);
-          }
+          await Promise.all(promises);
+          setAvatars(newAvatars);
+          setUsername(newUsername);
         }
       }
     };
