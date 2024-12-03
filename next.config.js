@@ -13,7 +13,7 @@ const nextConfig = {
             // Change to your backend URL in production
             // change 
             destination: "https://capybara-backend-Capybara.app.secoder.net/:path*",
-            // destination: "http://localhost:9099/:path*",
+            // destination: "http://localhost:3000/:path*",
         }];
     }
 };
